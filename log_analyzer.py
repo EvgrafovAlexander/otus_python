@@ -11,7 +11,7 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import Tuple
+from typing import List, Tuple
 
 config = {
     "REPORT_SIZE": 1000,
@@ -76,6 +76,7 @@ def line_parse(line: bytes) -> Tuple[str, float] or None:
     """
     Парсинг строки лога
     :line: строка лога
+
     :return: request - http-запрос
              request_time - длительность обработки запроса
              None - если не удалось распознать строку
@@ -90,6 +91,17 @@ def line_parse(line: bytes) -> Tuple[str, float] or None:
 
 
 def calc_stat(requests: dict, full_time: float, full_cnt: int):
+    """
+    Вычисление статистических показателей
+    и подготовка результирующих данных
+    :requests: словарь вида url-запрос: список request_time
+    :full_time: общая длительность выполнения запросов
+    :full_cnt: общее количество выполненных запросов
+
+    :return: request - http-запрос
+             request_time - длительность обработки запроса
+             None - если не удалось распознать строку
+    """
     stat = []
     for request, times in requests.items():
         time_sum = sum(times)
@@ -101,9 +113,24 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int):
              'time_perc': 100 * time_sum / full_time,
              'time_avg': time_sum / len(times),
              'time_max': max(times),
-             'time_med': None}
+             'time_med': get_median(times)}
         )
     return stat
+
+
+def get_median(values: List[float]) -> float:
+    """
+    Получение медианного значения
+    :values: список request_time
+
+    :return: медианное значение
+    """
+    values.sort()
+    if len(values) % 2:
+        return values[len(values) // 2]
+    else:
+        first = len(values) // 2
+        return (values[first] + values[first-1]) / 2
 
 
 if __name__ == "__main__":
