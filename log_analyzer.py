@@ -7,6 +7,7 @@
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
 import gzip
+import json
 import logging
 import os
 import re
@@ -46,6 +47,7 @@ def main():
                 else:
                     error_cnt += 1
         log_stat = calc_stat(requests, full_request_time, full_request_cnt)
+        save_report(log_stat)
     else:
         logging.info('Отсутствуют логи для обработки.')
 
@@ -108,12 +110,12 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int):
         stat.append(
             {'url': request,
              'count': len(times),
-             'count_perc': 100 * len(times) / full_cnt,
-             'time_sum': time_sum,
-             'time_perc': 100 * time_sum / full_time,
-             'time_avg': time_sum / len(times),
-             'time_max': max(times),
-             'time_med': get_median(times)}
+             'count_perc': round(100 * len(times) / full_cnt, 3),
+             'time_sum': round(time_sum, 3),
+             'time_perc': round(100 * time_sum / full_time, 3),
+             'time_avg': round(time_sum / len(times), 3),
+             'time_max': round(max(times), 3),
+             'time_med': round(get_median(times), 3)}
         )
     return stat
 
@@ -131,6 +133,19 @@ def get_median(values: List[float]) -> float:
     else:
         first = len(values) // 2
         return (values[first] + values[first-1]) / 2
+
+
+def save_report(report: List[dict]) -> None:
+    """
+    Запись отчёта в html
+    :report: сформированный отчёт
+
+    :return: None
+    """
+    template = open(config["REPORT_DIR"] + '/report.html').read()
+    report = re.sub('\$table_json', json.dumps(report), template)
+    with open(config["REPORT_DIR"] + '/' +'report_final.html', 'w') as report_file:
+        report_file.write(report)
 
 
 if __name__ == "__main__":
