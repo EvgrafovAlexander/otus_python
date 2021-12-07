@@ -100,9 +100,7 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int):
     :full_time: общая длительность выполнения запросов
     :full_cnt: общее количество выполненных запросов
 
-    :return: request - http-запрос
-             request_time - длительность обработки запроса
-             None - если не удалось распознать строку
+    :return: список с показателями по каждому url
     """
     stat = []
     for request, times in requests.items():
@@ -132,7 +130,7 @@ def get_median(values: List[float]) -> float:
         return values[len(values) // 2]
     else:
         first = len(values) // 2
-        return (values[first] + values[first-1]) / 2
+        return (values[first] + values[first - 1]) / 2
 
 
 def save_report(report: List[dict]) -> None:
@@ -144,7 +142,7 @@ def save_report(report: List[dict]) -> None:
     """
     template = open(config["REPORT_DIR"] + '/report.html').read()
     report = re.sub('\$table_json', json.dumps(report), template)
-    with open(config["REPORT_DIR"] + '/' +'report_final.html', 'w') as report_file:
+    with open(config["REPORT_DIR"] + '/' + 'report_final.html', 'w') as report_file:
         report_file.write(report)
 
 
