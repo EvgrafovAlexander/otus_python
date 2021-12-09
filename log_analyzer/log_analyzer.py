@@ -6,6 +6,7 @@
 #                     '$status $body_bytes_sent "$http_referer" '
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
+import argparse
 import gzip
 import json
 import logging
@@ -155,8 +156,17 @@ class LogAnalyzer():
             report_file.write(report)
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-log', "--log_dir", type=str, help="Log dir path example: ./log")
+    parser.add_argument('-rep', "--report_dir", type=str, help="Reports dir path example: ./reports")
+    args = parser.parse_args()
+    return args
+
+
 def main():
-    analyzer = LogAnalyzer(config["LOG_DIR"], config["REPORT_DIR"])
+    args = get_args()
+    analyzer = LogAnalyzer(args.log_dir, args.report_dir)
     report = analyzer.get_report()
     analyzer.save_report(report)
 
