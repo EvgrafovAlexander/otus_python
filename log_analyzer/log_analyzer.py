@@ -36,7 +36,12 @@ class LogAnalyzer():
         self.path = log.path
         self.is_gz = log.is_gz
 
-    def get_report(self):
+    def get_report(self) -> List[dict]:
+        """
+        Получение отчёта по ранее найденному логу
+        :return: Отчёт, сортированный по убыванию
+                времени обработки запроса
+        """
         if not self.name:
             return []
         requests, full_request_time, full_request_cnt = self.__parse_log()
@@ -147,9 +152,10 @@ class LogAnalyzer():
             return (values[first] + values[first - 1]) / 2
 
     @staticmethod
-    def save_report(report: List[dict], report_dir: str, report_size: int) -> None:
+    def save_report(log: namedtuple, report: List[dict], report_dir: str, report_size: int) -> None:
         """
         Запись отчёта в html
+        :log: информация о файле логирования
         :report: сформированный отчёт
         :report_dir: директория для записи отчёта
         :report_size: максимальный размер отчёта
@@ -159,7 +165,7 @@ class LogAnalyzer():
         report.sort(key=lambda x: x['time_sum'], reverse=True)
         template = open(report_dir + 'report.html').read()
         report = re.sub('\$table_json', json.dumps(report[:report_size]), template)
-        with open(report_dir + '/' + 'report_final.html', 'w') as report_file:
+        with open(report_dir + '/' + 'report-' + log.date.strftime("%Y.%m.%d") + '.html', 'w') as report_file:
             report_file.write(report)
 
 
@@ -189,9 +195,9 @@ def main():
         logging.info('Значение по умолчанию')
 
     log = LogAnalyzer.get_last_log(log_dir)
-    log = LogAnalyzer(log)
-    report = log.get_report()
-    log.save_report(report, report_dir, report_size)
+    analyzer = LogAnalyzer(log)
+    report = analyzer.get_report()
+    analyzer.save_report(log, report, report_dir, report_size)
 
 
 if __name__ == "__main__":
