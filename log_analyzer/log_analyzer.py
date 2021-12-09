@@ -175,12 +175,19 @@ def get_args():
     parser.add_argument('-log', "--log_dir", type=str, help="Log dir path example: ./log/")
     parser.add_argument('-rep', "--report_dir", type=str, help="Reports dir path example: ./reports/")
     parser.add_argument('-size', "--report_size", type=int, help="Report size example: 1000")
+    parser.add_argument('-path', "--log_file_path", type=str, help="Logging file path: ./log_analyzer.log")
     args = parser.parse_args()
     return args
 
 
 def main():
     args = get_args()
+
+    logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
+                        level=logging.DEBUG,
+                        datefmt='%Y.%m.%d %H:%M:%S',
+                        filename=args.log_file_path)
+
     log_dir = args.log_dir
     report_dir = args.report_dir
     report_size = args.report_size
