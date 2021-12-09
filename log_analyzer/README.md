@@ -7,7 +7,7 @@
 (log_file_path).
 
 ### Параметры:
-| Name or flags         | Help                                       |
+| Param name         | Description                                       |
 |-----------------------|--------------------------------------------|
 | -log, --log_dir       | - Log dir path                              |
 | -rep, --report_dir    | - Reports dir path                     |

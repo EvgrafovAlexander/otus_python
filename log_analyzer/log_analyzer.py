@@ -19,7 +19,8 @@ from typing import Dict, List, Tuple
 config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports/",
-    "LOG_DIR": "./log/"
+    "LOG_DIR": "./log/",
+    "ERROR_LIMIT_PERC": 50
 }
 
 Log = namedtuple('Log', 'date name path is_gz')
@@ -39,18 +40,22 @@ class LogAnalyzer():
     def get_report(self) -> List[dict]:
         """
         Получение отчёта по ранее найденному логу
+
         :return: Отчёт, сортированный по убыванию
                 времени обработки запроса
         """
         if not self.name:
             return []
-        requests, full_request_time, full_request_cnt = self.__parse_log()
-        return self.__calc_stat(requests, full_request_time, full_request_cnt)
+        requests, full_request_time, full_request_cnt, error_cnt = self.__parse_log()
+        return self.__calc_stat(requests, full_request_time, full_request_cnt, error_cnt)
 
     @staticmethod
-    def get_last_log(log_dir) -> namedtuple or None:
+    def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
         """
         Получение наименования файла последней записи логов интерфейса
+        :log_dir: директория чтения логов
+        :report_dir: директория хранения отчётов
+
         :return: Tuple вида:
                  date - дата записи лога
                  name - наименование файла
@@ -69,11 +74,22 @@ class LogAnalyzer():
                     else:
                         last_log = Log(date, name, log_dir, name[-2:] == 'gz')
         if not last_log:
-            logging.info('Отсутствуют логи для обработки')
+            logging.info('Отсутствуют логи для обработки. Анализ остановлен.')
+        elif LogAnalyzer.is_already_analyzed(last_log, report_dir):
+            last_log = None
+            logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
 
         return last_log
 
-    def __parse_log(self) -> Tuple[Dict[str, List[float]], int, int]:
+    def __parse_log(self) -> Tuple[Dict[str, List[float]], int, int, int]:
+        """
+        Сбор информации по логу
+
+        :return: requests - словарь вида url-запрос: список request_time
+                 full_time - общая длительность выполнения запросов
+                 full_cnt - общее количество выполненных запросов
+                 error_cnt - общее количество ошибок распознавания
+        """
         requests = dict()
         full_request_time, full_request_cnt, error_cnt = 0, 0, 0
         read_params = self.path + self.name, 'rb'
@@ -91,7 +107,18 @@ class LogAnalyzer():
                     full_request_cnt += 1
                 else:
                     error_cnt += 1
-        return requests, full_request_time, full_request_cnt
+        return requests, full_request_time, full_request_cnt, error_cnt
+
+    @staticmethod
+    def is_already_analyzed(log: Log, report_dir: str) -> bool:
+        """
+        Проверка на существование отчёта по данному логу
+        :report_dir: информация о логе
+        :report_dir: директория хранения отчётов
+
+        :return: флаг наличия отчёта
+        """
+        return 'report-' + log.date.strftime("%Y.%m.%d") + '.html' in os.listdir(report_dir)
 
     @staticmethod
     def __parse_line(line: bytes) -> Tuple[str, float] or None:
@@ -111,17 +138,28 @@ class LogAnalyzer():
             return request, request_time
         return None
 
-    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int) -> List[dict]:
+    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int, error_cnt: int) -> List[dict]:
         """
         Вычисление статистических показателей
         и подготовка результирующих данных
         :requests: словарь вида url-запрос: список request_time
         :full_time: общая длительность выполнения запросов
         :full_cnt: общее количество выполненных запросов
+        :error_cnt: общее количество ошибок распознавания
 
         :return: список с показателями по каждому url
         """
         stat = []
+
+        if not full_cnt:
+            logging.info('Не найдено ни одной записи в логе. Анализ остановлен.')
+            return stat
+        incorrect_perc = 100 * error_cnt / full_cnt
+        if incorrect_perc > config["ERROR_LIMIT_PERC"]:
+            logging.info('Превышение порога ошибок парсинга:, %s %% > %s %%. Анализ остановлен',
+                         round(incorrect_perc, 1), config["ERROR_LIMIT_PERC"])
+            return stat
+
         for request, times in requests.items():
             time_sum = sum(times)
             stat.append(
@@ -170,6 +208,34 @@ class LogAnalyzer():
             report_file.write(report)
 
 
+def directory_check(log_dir: str, report_dir: str, report_size: str) -> Tuple[str, str, int]:
+    """
+    Проверка указания директорий и создание в случае отсутствия
+    :param log_dir: директория чтения логов
+    :param report_dir: директория записей отчёта
+    :param report_size: ограничитель числа записей в отчёте
+
+    :return: директории па умолчанию в случае, если параметры не заданы
+    """
+    if not log_dir:
+        log_dir = config["LOG_DIR"]
+    logging.info('Не указана директория чтения логов.'
+                 ' Установлено значение по умолчанию: %s', config["LOG_DIR"])
+    if not report_dir:
+        report_dir = config["REPORT_DIR"]
+        logging.info('Не указана директория записи отчётов.'
+                     ' Установлено значение по умолчанию: %s', config["REPORT_DIR"])
+    if not report_size:
+        report_size = config["REPORT_SIZE"]
+        logging.info('Не указано максимальное число записей отчёта.'
+                     ' Установлено значение по умолчанию: %s', config["REPORT_SIZE"])
+
+    for dir in (log_dir, report_dir):
+        os.makedirs(dir, exist_ok=True)
+
+    return log_dir, report_dir, report_size
+
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-log', "--log_dir", type=str, help="Log dir path example: ./log/")
@@ -188,25 +254,24 @@ def main():
                         datefmt='%Y.%m.%d %H:%M:%S',
                         filename=args.log_file_path)
 
-    log_dir = args.log_dir
-    report_dir = args.report_dir
-    report_size = args.report_size
+    try:
+        log_dir, report_dir, report_size = directory_check(args.log_dir,
+                                                           args.report_dir,
+                                                           args.report_size)
 
-    if not log_dir:
-        log_dir = config["LOG_DIR"]
-        logging.info('Директория по умолчанию')
-    if not report_dir:
-        report_dir = config["REPORT_DIR"]
-        logging.info('Директория по умолчанию')
-    if not report_size:
-        report_size = config["REPORT_SIZE"]
-        logging.info('Значение по умолчанию')
+        log = LogAnalyzer.get_last_log(log_dir, report_dir)
+        if log:
+            analyzer = LogAnalyzer(log)
+            report = analyzer.get_report()
+            if report:
+                analyzer.save_report(log, report, report_dir, report_size)
 
-    log = LogAnalyzer.get_last_log(log_dir)
-    analyzer = LogAnalyzer(log)
-    report = analyzer.get_report()
-    analyzer.save_report(log, report, report_dir, report_size)
+    except Exception as e:
+        logging.exception('Необработанное исключение %s, %s', type(e), e.args)
 
 
 if __name__ == "__main__":
+    #TODO: Проверить bz2
+    #TODO: Добавить чтение из конфига
+    #TODO: Добавить тест
     main()
