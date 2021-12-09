@@ -25,7 +25,7 @@ config = {
 
 Log = namedtuple('Log', 'date name path is_gz')
 
-COMMON_PATTERN = r'nginx-access-ui.log-\d\d\d\d\d\d\d\d.*'
+COMMON_PATTERN = r'nginx-access-ui.log-\d\d\d\d\d\d\d\d(.gz|)$'
 DATE_PATTERN = r'\d\d\d\d\d\d\d\d'
 REF_PATTERN = r'(GET|POST).*(HTTP)'
 
@@ -271,7 +271,5 @@ def main():
 
 
 if __name__ == "__main__":
-    #TODO: Проверить bz2
     #TODO: Добавить чтение из конфига
-    #TODO: Добавить тест
     main()
