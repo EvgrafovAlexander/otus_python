@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 .idea
 
-log/
-reports/
+log_analyzer/log/
+log_analyzer/reports/
 
 # C extensions
 *.so

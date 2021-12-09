@@ -102,7 +102,7 @@ class LogAnalyzer():
             return request, request_time
         return None
 
-    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int):
+    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int) -> List[dict]:
         """
         Вычисление статистических показателей
         и подготовка результирующих данных
