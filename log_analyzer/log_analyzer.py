@@ -163,7 +163,8 @@ class LogAnalyzer():
         :return: None
         """
         report.sort(key=lambda x: x['time_sum'], reverse=True)
-        template = open(report_dir + 'report.html').read()
+        with open(report_dir + 'report.html') as template:
+            template = template.read()
         report = re.sub('\$table_json', json.dumps(report[:report_size]), template)
         with open(report_dir + '/' + 'report-' + log.date.strftime("%Y.%m.%d") + '.html', 'w') as report_file:
             report_file.write(report)
