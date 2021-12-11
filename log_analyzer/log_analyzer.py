@@ -6,7 +6,7 @@
 #                     '$status $body_bytes_sent "$http_referer" '
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
-import argparse
+import argparse, configparser
 import gzip
 import json
 import logging
@@ -16,11 +16,12 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Dict, List, Tuple
 
+
 config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports/",
     "LOG_DIR": "./log/",
-    "ERROR_LIMIT_PERC": 50
+    "ERROR_PERC_LIMIT": 50
 }
 
 Log = namedtuple('Log', 'date name path is_gz')
@@ -37,9 +38,10 @@ class LogAnalyzer():
         self.path = log.path
         self.is_gz = log.is_gz
 
-    def get_report(self) -> List[dict]:
+    def get_report(self, err_perc_limit: float) -> List[dict]:
         """
         Получение отчёта по ранее найденному логу
+        :err_perc_limit: предельный % ошибок
 
         :return: Отчёт, сортированный по убыванию
                 времени обработки запроса
@@ -47,7 +49,7 @@ class LogAnalyzer():
         if not self.name:
             return []
         requests, full_request_time, full_request_cnt, error_cnt = self.__parse_log()
-        return self.__calc_stat(requests, full_request_time, full_request_cnt, error_cnt)
+        return self.__calc_stat(requests, full_request_time, full_request_cnt, error_cnt, err_perc_limit)
 
     @staticmethod
     def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
@@ -138,7 +140,8 @@ class LogAnalyzer():
             return request, request_time
         return None
 
-    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int, error_cnt: int) -> List[dict]:
+    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int,
+                    error_cnt: int, err_perc_limit: float) -> List[dict]:
         """
         Вычисление статистических показателей
         и подготовка результирующих данных
@@ -146,6 +149,7 @@ class LogAnalyzer():
         :full_time: общая длительность выполнения запросов
         :full_cnt: общее количество выполненных запросов
         :error_cnt: общее количество ошибок распознавания
+        :err_perc_limit: предельный % ошибок
 
         :return: список с показателями по каждому url
         """
@@ -155,9 +159,9 @@ class LogAnalyzer():
             logging.info('Не найдено ни одной записи в логе. Анализ остановлен.')
             return stat
         incorrect_perc = 100 * error_cnt / full_cnt
-        if incorrect_perc > config["ERROR_LIMIT_PERC"]:
+        if incorrect_perc > err_perc_limit:
             logging.info('Превышение порога ошибок парсинга:, %s %% > %s %%. Анализ остановлен',
-                         round(incorrect_perc, 1), config["ERROR_LIMIT_PERC"])
+                         round(incorrect_perc, 1), err_perc_limit)
             return stat
 
         for request, times in requests.items():
@@ -208,32 +212,48 @@ class LogAnalyzer():
             report_file.write(report)
 
 
-def directory_check(log_dir: str, report_dir: str, report_size: str) -> Tuple[str, str, int]:
+def config_setter(args, conf_default: dict):
     """
-    Проверка указания директорий и создание в случае отсутствия
-    :param log_dir: директория чтения логов
-    :param report_dir: директория записей отчёта
-    :param report_size: ограничитель числа записей в отчёте
+    Настройка конфигурации с приоритетом
+    по убыванию "из файла config -> из переданных параметров -> по умолчанию"
+    :param args: аргументы пользователя
+    :param conf_default: конфигурация по умолчанию
 
-    :return: директории па умолчанию в случае, если параметры не заданы
+    :return: сформированные значения конфигурационных параметров:
+             log_dir - директория чтения логов
+             report_dir - директория записей отчёта
+             report_size - предельный размер отчёта
+             err_perc_limit - предельный % ошибок
     """
-    if not log_dir:
-        log_dir = config["LOG_DIR"]
-    logging.info('Не указана директория чтения логов.'
-                 ' Установлено значение по умолчанию: %s', config["LOG_DIR"])
-    if not report_dir:
-        report_dir = config["REPORT_DIR"]
-        logging.info('Не указана директория записи отчётов.'
-                     ' Установлено значение по умолчанию: %s', config["REPORT_DIR"])
-    if not report_size:
-        report_size = config["REPORT_SIZE"]
-        logging.info('Не указано максимальное число записей отчёта.'
-                     ' Установлено значение по умолчанию: %s', config["REPORT_SIZE"])
+    if args.config_file_path:
+        # config из файла
+        conf = configparser.ConfigParser()
+        conf.read(args.config_file_path)
+
+        report_size = int(conf['DEFAULT']['REPORT_SIZE']) if 'REPORT_SIZE' in conf['DEFAULT']\
+            else conf_default['REPORT_SIZE']
+        report_dir = conf['DEFAULT']['REPORT_DIR'] if 'REPORT_DIR' in conf['DEFAULT']\
+            else conf_default['REPORT_DIR']
+        log_dir = conf['DEFAULT']['LOG_DIR'] if 'LOG_DIR' in conf['DEFAULT']\
+            else conf_default['LOG_DIR']
+        err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT']\
+            else config['ERROR_PERC_LIMIT']
+    else:
+        # config из параметров
+        report_size = int(args.report_size) if args.report_size else conf_default['REPORT_SIZE']
+        report_dir = args.report_dir if args.report_dir else conf_default['REPORT_DIR']
+        log_dir = args.log_dir if args.log_dir else conf_default['LOG_DIR']
+        err_perc_limit = float(args.err_perc_limit) if args.err_perc_limit else conf_default['ERROR_PERC_LIMIT']
 
     for dir in (log_dir, report_dir):
         os.makedirs(dir, exist_ok=True)
 
-    return log_dir, report_dir, report_size
+    logging.info('Директория чтения логов: %s', log_dir)
+    logging.info('Директория записи отчётов: %s', report_dir)
+    logging.info('Предельный размер отчёта: %i', report_size)
+    logging.info('Предельный %% ошибок: %.1f', err_perc_limit)
+
+    return log_dir, report_dir, report_size, err_perc_limit
 
 
 def get_args():
@@ -241,7 +261,9 @@ def get_args():
     parser.add_argument('-log', "--log_dir", type=str, help="Log dir path example: ./log/")
     parser.add_argument('-rep', "--report_dir", type=str, help="Reports dir path example: ./reports/")
     parser.add_argument('-size', "--report_size", type=int, help="Report size example: 1000")
+    parser.add_argument('-err', "--err_perc_limit", type=float, help="Error limit % example: 50.0")
     parser.add_argument('-path', "--log_file_path", type=str, help="Logging file path: ./log_analyzer.log")
+    parser.add_argument('-config', "--config_file_path", type=str, help="Configuration file path: ./config.ini")
     args = parser.parse_args()
     return args
 
@@ -255,14 +277,12 @@ def main():
                         filename=args.log_file_path)
 
     try:
-        log_dir, report_dir, report_size = directory_check(args.log_dir,
-                                                           args.report_dir,
-                                                           args.report_size)
+        log_dir, report_dir, report_size, err_perc_limit = config_setter(args, config)
 
         log = LogAnalyzer.get_last_log(log_dir, report_dir)
         if log:
             analyzer = LogAnalyzer(log)
-            report = analyzer.get_report()
+            report = analyzer.get_report(err_perc_limit)
             if report:
                 analyzer.save_report(log, report, report_dir, report_size)
 
@@ -271,5 +291,4 @@ def main():
 
 
 if __name__ == "__main__":
-    #TODO: Добавить чтение из конфига
     main()

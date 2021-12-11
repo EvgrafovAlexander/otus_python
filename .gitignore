@@ -6,6 +6,9 @@ __pycache__/
 
 log_analyzer/log/
 log_analyzer/reports/
+log/
+reports/
+*.ini
 
 # C extensions
 *.so
