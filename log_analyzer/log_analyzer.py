@@ -22,14 +22,13 @@ default_config = {
     "REPORT_DIR": "./reports/",
     "LOG_DIR": "./log/",
     "ERROR_PERC_LIMIT": 50,
-    "LOG_FILE_PATH": "./log_analyzer.log"
+    "LOG_FILE_PATH": None
 }
 
 Log = namedtuple('Log', 'date name path is_gz')
 
-COMMON_PATTERN = r'nginx-access-ui.log-\d\d\d\d\d\d\d\d(.gz|)$'
-DATE_PATTERN = r'\d\d\d\d\d\d\d\d'
 REF_PATTERN = r'(GET|POST).*(HTTP)'
+COMMON_PATTERN = r'^nginx-access-ui\.log-(?P<date>\d{8})(\.gz)?$'
 
 
 def get_report(log: Log, err_perc_limit: float) -> List[dict]:
@@ -59,16 +58,18 @@ def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
     """
     last_log = None
     for name in os.listdir(log_dir):
-        found = re.search(COMMON_PATTERN, name)
+        found = re.match(COMMON_PATTERN, name)
         if found:
-            date = re.search(DATE_PATTERN, found.group(0))
-            if date:
-                date = datetime.strptime(date.group(0), "%Y%m%d")
-                if last_log:
-                    if date > last_log.date:
-                        last_log = Log(date, name, log_dir, name[-2:] == 'gz')
-                else:
-                    last_log = Log(date, name, log_dir, name[-2:] == 'gz')
+            name = found.group(0)
+            date = found.group(1)
+            is_gz = found.group(2)
+
+            date = datetime.strptime(date, "%Y%m%d")
+            if last_log:
+                if date > last_log.date:
+                    last_log = Log(date, name, log_dir, is_gz and True)
+            else:
+                last_log = Log(date, name, log_dir, is_gz and True)
 
     return last_log
 
