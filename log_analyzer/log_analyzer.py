@@ -20,7 +20,8 @@ config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports/",
     "LOG_DIR": "./log/",
-    "ERROR_PERC_LIMIT": 50
+    "ERROR_PERC_LIMIT": 50,
+    "LOG_FILE_PATH": "./log_analyzer.log"
 }
 
 Log = namedtuple('Log', 'date name path is_gz')
@@ -233,12 +234,15 @@ def config_setter(args, conf_default: dict):
             else conf_default['LOG_DIR']
         err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT'] \
             else config['ERROR_PERC_LIMIT']
+        log_file_path = conf['DEFAULT']['LOG_FILE_PATH'] if 'LOG_FILE_PATH' in conf['DEFAULT'] \
+            else config['LOG_FILE_PATH']
     else:
         # config из параметров
         report_size = int(args.report_size) if args.report_size else conf_default['REPORT_SIZE']
         report_dir = args.report_dir if args.report_dir else conf_default['REPORT_DIR']
         log_dir = args.log_dir if args.log_dir else conf_default['LOG_DIR']
         err_perc_limit = float(args.err_perc_limit) if args.err_perc_limit else conf_default['ERROR_PERC_LIMIT']
+        log_file_path = args.log_file_path if args.log_file_path else conf_default['LOG_FILE_PATH']
 
     for dir in (log_dir, report_dir):
         os.makedirs(dir, exist_ok=True)
@@ -248,7 +252,7 @@ def config_setter(args, conf_default: dict):
     logging.info('Предельный размер отчёта: %i', report_size)
     logging.info('Предельный %% ошибок: %.1f', err_perc_limit)
 
-    return log_dir, report_dir, report_size, err_perc_limit
+    return log_dir, report_dir, report_size, err_perc_limit, log_file_path
 
 
 def get_args():
@@ -266,13 +270,13 @@ def get_args():
 def main():
     args = get_args()
 
-    logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
-                        level=logging.DEBUG,
-                        datefmt='%Y.%m.%d %H:%M:%S',
-                        filename=args.log_file_path)
-
     try:
-        log_dir, report_dir, report_size, err_perc_limit = config_setter(args, config)
+        log_dir, report_dir, report_size, err_perc_limit, log_file_path = config_setter(args, config)
+
+        logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
+                            level=logging.DEBUG,
+                            datefmt='%Y.%m.%d %H:%M:%S',
+                            filename=log_file_path)
 
         log = get_last_log(log_dir, report_dir)
         if log:
