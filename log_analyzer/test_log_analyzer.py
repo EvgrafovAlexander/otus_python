@@ -4,14 +4,14 @@ import unittest
 
 from datetime import datetime
 
-from log_analyzer.log_analyzer import LogAnalyzer
+import log_analyzer
 
 
 class TestLogAnalyzer(unittest.TestCase):
 
     def setUp(cls) -> None:
-        cls.log_dir = './log_analyzer/test_log/'
-        cls.report_dir = './log_analyzer/test_reports/'
+        cls.log_dir = './test_log/'
+        cls.report_dir = './test_reports/'
         cls.report_size = 100
         cls.err_perc_limit = 70
 
@@ -49,9 +49,8 @@ class TestLogAnalyzer(unittest.TestCase):
             shutil.rmtree(dir, ignore_errors=True)
 
     def test_log_analyzer(self):
-        log = LogAnalyzer.get_last_log(self.log_dir, self.report_dir)
-        analyzer = LogAnalyzer(log)
-        report = analyzer.get_report(self.err_perc_limit)
+        log = log_analyzer.get_last_log(self.log_dir, self.report_dir)
+        report = log_analyzer.get_report(log, self.err_perc_limit)
         self.assertEqual(datetime(2021, 9, 29), log.date)
         self.assertListEqual(self.expected_report, report)
 

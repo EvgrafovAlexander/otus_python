@@ -16,7 +16,6 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-
 config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports/",
@@ -31,185 +30,181 @@ DATE_PATTERN = r'\d\d\d\d\d\d\d\d'
 REF_PATTERN = r'(GET|POST).*(HTTP)'
 
 
-class LogAnalyzer():
-    def __init__(self, log: Log):
-        self.date = log.date
-        self.name = log.name
-        self.path = log.path
-        self.is_gz = log.is_gz
+def get_report(log: Log, err_perc_limit: float) -> List[dict]:
+    """
+    Получение отчёта по ранее найденному логу
+    :err_perc_limit: предельный % ошибок
 
-    def get_report(self, err_perc_limit: float) -> List[dict]:
-        """
-        Получение отчёта по ранее найденному логу
-        :err_perc_limit: предельный % ошибок
+    :return: Отчёт, сортированный по убыванию
+            времени обработки запроса
+    """
+    if not log.name:
+        return []
+    requests, full_request_time, full_request_cnt, error_cnt = parse_log(log)
+    return calc_stat(requests, full_request_time, full_request_cnt, error_cnt, err_perc_limit)
 
-        :return: Отчёт, сортированный по убыванию
-                времени обработки запроса
-        """
-        if not self.name:
-            return []
-        requests, full_request_time, full_request_cnt, error_cnt = self.__parse_log()
-        return self.__calc_stat(requests, full_request_time, full_request_cnt, error_cnt, err_perc_limit)
 
-    @staticmethod
-    def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
-        """
-        Получение наименования файла последней записи логов интерфейса
-        :log_dir: директория чтения логов
-        :report_dir: директория хранения отчётов
+def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
+    """
+    Получение наименования файла последней записи логов интерфейса
+    :log_dir: директория чтения логов
+    :report_dir: директория хранения отчётов
 
-        :return: Tuple вида:
-                 date - дата записи лога
-                 name - наименование файла
-                 is_gz - является *gz расширением
-        """
-        last_log = None
-        for name in os.listdir(log_dir):
-            found = re.search(COMMON_PATTERN, name)
-            if found:
-                date = re.search(DATE_PATTERN, found.group(0))
-                if date:
-                    date = datetime.strptime(date.group(0), "%Y%m%d")
-                    if last_log:
-                        if date > last_log.date:
-                            last_log = Log(date, name, log_dir, name[-2:] == 'gz')
-                    else:
-                        last_log = Log(date, name, log_dir, name[-2:] == 'gz')
-        if not last_log:
-            logging.info('Отсутствуют логи для обработки. Анализ остановлен.')
-        elif LogAnalyzer.is_already_analyzed(last_log, report_dir):
-            last_log = None
-            logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
-
-        return last_log
-
-    def __parse_log(self) -> Tuple[Dict[str, List[float]], int, int, int]:
-        """
-        Сбор информации по логу
-
-        :return: requests - словарь вида url-запрос: список request_time
-                 full_time - общая длительность выполнения запросов
-                 full_cnt - общее количество выполненных запросов
-                 error_cnt - общее количество ошибок распознавания
-        """
-        requests = dict()
-        full_request_time, full_request_cnt, error_cnt = 0, 0, 0
-        read_params = self.path + self.name, 'rb'
-        open_func = gzip.open(*read_params) if self.is_gz else open(*read_params)
-        with open_func as log_file:
-            for line in log_file:
-                line_info = self.__parse_line(line)
-                if line_info:
-                    request, request_time = line_info
-                    if request not in requests:
-                        requests[request] = [request_time]
-                    else:
-                        requests[request].append(request_time)
-                    full_request_time += request_time
-                    full_request_cnt += 1
-                else:
-                    error_cnt += 1
-        return requests, full_request_time, full_request_cnt, error_cnt
-
-    @staticmethod
-    def is_already_analyzed(log: Log, report_dir: str) -> bool:
-        """
-        Проверка на существование отчёта по данному логу
-        :report_dir: информация о логе
-        :report_dir: директория хранения отчётов
-
-        :return: флаг наличия отчёта
-        """
-        return 'report-' + log.date.strftime("%Y.%m.%d") + '.html' in os.listdir(report_dir)
-
-    @staticmethod
-    def __parse_line(line: bytes) -> Tuple[str, float] or None:
-        """
-        Парсинг строки лога
-        :line: строка лога
-
-        :return: request - http-запрос
-                 request_time - длительность обработки запроса
-                 None - если не удалось распознать строку
-        """
-        line = line.decode('utf-8')
-        found = re.search(REF_PATTERN, line)
+    :return: Tuple вида:
+             date - дата записи лога
+             name - наименование файла
+             is_gz - является *gz расширением
+    """
+    last_log = None
+    for name in os.listdir(log_dir):
+        found = re.search(COMMON_PATTERN, name)
         if found:
-            request = found.group(0).split()[1]
-            request_time = float(line.split()[-1])
-            return request, request_time
-        return None
+            date = re.search(DATE_PATTERN, found.group(0))
+            if date:
+                date = datetime.strptime(date.group(0), "%Y%m%d")
+                if last_log:
+                    if date > last_log.date:
+                        last_log = Log(date, name, log_dir, name[-2:] == 'gz')
+                else:
+                    last_log = Log(date, name, log_dir, name[-2:] == 'gz')
+    if not last_log:
+        logging.info('Отсутствуют логи для обработки. Анализ остановлен.')
+    elif is_already_analyzed(last_log, report_dir):
+        last_log = None
+        logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
 
-    def __calc_stat(self, requests: dict, full_time: float, full_cnt: int,
-                    error_cnt: int, err_perc_limit: float) -> List[dict]:
+    return last_log
+
+
+def parse_log(log: Log) -> Tuple[Dict[str, List[float]], int, int, int]:
+    """
+    Сбор информации по логу
+    :log_dir: информация о рассматриваемом логе
+
+    :return: requests - словарь вида url-запрос: список request_time
+             full_time - общая длительность выполнения запросов
+             full_cnt - общее количество выполненных запросов
+             error_cnt - общее количество ошибок распознавания
+    """
+    requests = dict()
+    full_request_time, full_request_cnt, error_cnt = 0, 0, 0
+    read_params = log.path + log.name, 'rb'
+    open_func = gzip.open(*read_params) if log.is_gz else open(*read_params)
+    with open_func as log_file:
+        for line in log_file:
+            line_info = parse_line(line)
+            if line_info:
+                request, request_time = line_info
+                if request not in requests:
+                    requests[request] = [request_time]
+                else:
+                    requests[request].append(request_time)
+                full_request_time += request_time
+                full_request_cnt += 1
+            else:
+                error_cnt += 1
+    return requests, full_request_time, full_request_cnt, error_cnt
+
+
+def is_already_analyzed(log: Log, report_dir: str) -> bool:
+    """
+    Проверка на существование отчёта по данному логу
+    :report_dir: информация о логе
+    :report_dir: директория хранения отчётов
+
+    :return: флаг наличия отчёта
+    """
+    return 'report-' + log.date.strftime("%Y.%m.%d") + '.html' in os.listdir(report_dir)
+
+
+def parse_line(line: bytes) -> Tuple[str, float] or None:
+    """
+    Парсинг строки лога
+    :line: строка лога
+
+    :return: request - http-запрос
+             request_time - длительность обработки запроса
+             None - если не удалось распознать строку
         """
-        Вычисление статистических показателей
-        и подготовка результирующих данных
-        :requests: словарь вида url-запрос: список request_time
-        :full_time: общая длительность выполнения запросов
-        :full_cnt: общее количество выполненных запросов
-        :error_cnt: общее количество ошибок распознавания
-        :err_perc_limit: предельный % ошибок
+    line = line.decode('utf-8')
+    found = re.search(REF_PATTERN, line)
+    if found:
+        request = found.group(0).split()[1]
+        request_time = float(line.split()[-1])
+        return request, request_time
+    return None
 
-        :return: список с показателями по каждому url
-        """
-        stat = []
 
-        if not full_cnt:
-            logging.info('Не найдено ни одной записи в логе. Анализ остановлен.')
-            return stat
-        incorrect_perc = 100 * error_cnt / full_cnt
-        if incorrect_perc > err_perc_limit:
-            logging.info('Превышение порога ошибок парсинга:, %s %% > %s %%. Анализ остановлен',
-                         round(incorrect_perc, 1), err_perc_limit)
-            return stat
+def calc_stat(requests: dict, full_time: float, full_cnt: int,
+              error_cnt: int, err_perc_limit: float) -> List[dict]:
+    """
+    Вычисление статистических показателей
+    и подготовка результирующих данных
+    :requests: словарь вида url-запрос: список request_time
+    :full_time: общая длительность выполнения запросов
+    :full_cnt: общее количество выполненных запросов
+    :error_cnt: общее количество ошибок распознавания
+    :err_perc_limit: предельный % ошибок
 
-        for request, times in requests.items():
-            time_sum = sum(times)
-            stat.append(
-                {'url': request,
-                 'count': len(times),
-                 'count_perc': round(100 * len(times) / full_cnt, 3),
-                 'time_sum': round(time_sum, 3),
-                 'time_perc': round(100 * time_sum / full_time, 3),
-                 'time_avg': round(time_sum / len(times), 3),
-                 'time_max': round(max(times), 3),
-                 'time_med': round(self.__get_median(times), 3)}
-            )
+    :return: список с показателями по каждому url
+    """
+    stat = []
+
+    if not full_cnt:
+        logging.info('Не найдено ни одной записи в логе. Анализ остановлен.')
+        return stat
+    incorrect_perc = 100 * error_cnt / full_cnt
+    if incorrect_perc > err_perc_limit:
+        logging.info('Превышение порога ошибок парсинга:, %s %% > %s %%. Анализ остановлен',
+                     round(incorrect_perc, 1), err_perc_limit)
         return stat
 
-    @staticmethod
-    def __get_median(values: List[float]) -> float:
-        """
-        Получение медианного значения
-        :values: список request_time
+    for request, times in requests.items():
+        time_sum = sum(times)
+        stat.append(
+            {'url': request,
+             'count': len(times),
+             'count_perc': round(100 * len(times) / full_cnt, 3),
+             'time_sum': round(time_sum, 3),
+             'time_perc': round(100 * time_sum / full_time, 3),
+             'time_avg': round(time_sum / len(times), 3),
+             'time_max': round(max(times), 3),
+             'time_med': round(get_median(times), 3)}
+        )
+    return stat
 
-        :return: медианное значение
-        """
-        values.sort()
-        if len(values) % 2:
-            return values[len(values) // 2]
-        else:
-            first = len(values) // 2
-            return (values[first] + values[first - 1]) / 2
 
-    @staticmethod
-    def save_report(log: namedtuple, report: List[dict], report_dir: str, report_size: int) -> None:
-        """
-        Запись отчёта в html
-        :log: информация о файле логирования
-        :report: сформированный отчёт
-        :report_dir: директория для записи отчёта
-        :report_size: максимальный размер отчёта
+def get_median(values: List[float]) -> float:
+    """
+    Получение медианного значения
+    :values: список request_time
 
-        :return: None
-        """
-        report.sort(key=lambda x: x['time_sum'], reverse=True)
-        with open(report_dir + 'report.html') as template:
-            template = template.read()
-        report = re.sub('\$table_json', json.dumps(report[:report_size]), template)
-        with open(report_dir + '/' + 'report-' + log.date.strftime("%Y.%m.%d") + '.html', 'w') as report_file:
-            report_file.write(report)
+    :return: медианное значение
+    """
+    values.sort()
+    if len(values) % 2:
+        return values[len(values) // 2]
+    else:
+        first = len(values) // 2
+        return (values[first] + values[first - 1]) / 2
+
+
+def save_report(log: namedtuple, report: List[dict], report_dir: str, report_size: int) -> None:
+    """
+    Запись отчёта в html
+    :log: информация о файле логирования
+    :report: сформированный отчёт
+    :report_dir: директория для записи отчёта
+    :report_size: максимальный размер отчёта
+
+    :return: None
+    """
+    report.sort(key=lambda x: x['time_sum'], reverse=True)
+    with open(report_dir + 'report.html') as template:
+        template = template.read()
+    report = re.sub('\$table_json', json.dumps(report[:report_size]), template)
+    with open(report_dir + '/' + 'report-' + log.date.strftime("%Y.%m.%d") + '.html', 'w') as report_file:
+        report_file.write(report)
 
 
 def config_setter(args, conf_default: dict):
@@ -230,13 +225,13 @@ def config_setter(args, conf_default: dict):
         conf = configparser.ConfigParser()
         conf.read(args.config_file_path)
 
-        report_size = int(conf['DEFAULT']['REPORT_SIZE']) if 'REPORT_SIZE' in conf['DEFAULT']\
+        report_size = int(conf['DEFAULT']['REPORT_SIZE']) if 'REPORT_SIZE' in conf['DEFAULT'] \
             else conf_default['REPORT_SIZE']
-        report_dir = conf['DEFAULT']['REPORT_DIR'] if 'REPORT_DIR' in conf['DEFAULT']\
+        report_dir = conf['DEFAULT']['REPORT_DIR'] if 'REPORT_DIR' in conf['DEFAULT'] \
             else conf_default['REPORT_DIR']
-        log_dir = conf['DEFAULT']['LOG_DIR'] if 'LOG_DIR' in conf['DEFAULT']\
+        log_dir = conf['DEFAULT']['LOG_DIR'] if 'LOG_DIR' in conf['DEFAULT'] \
             else conf_default['LOG_DIR']
-        err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT']\
+        err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT'] \
             else config['ERROR_PERC_LIMIT']
     else:
         # config из параметров
@@ -279,12 +274,11 @@ def main():
     try:
         log_dir, report_dir, report_size, err_perc_limit = config_setter(args, config)
 
-        log = LogAnalyzer.get_last_log(log_dir, report_dir)
+        log = get_last_log(log_dir, report_dir)
         if log:
-            analyzer = LogAnalyzer(log)
-            report = analyzer.get_report(err_perc_limit)
+            report = get_report(log, err_perc_limit)
             if report:
-                analyzer.save_report(log, report, report_dir, report_size)
+                save_report(log, report, report_dir, report_size)
 
     except Exception as e:
         logging.exception('Необработанное исключение %s, %s', type(e), e.args)
