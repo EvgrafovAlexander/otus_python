@@ -69,11 +69,6 @@ def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
                         last_log = Log(date, name, log_dir, name[-2:] == 'gz')
                 else:
                     last_log = Log(date, name, log_dir, name[-2:] == 'gz')
-    if not last_log:
-        logging.info('Отсутствуют логи для обработки. Анализ остановлен.')
-    elif is_already_analyzed(last_log, report_dir):
-        last_log = None
-        logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
 
     return last_log
 
@@ -272,7 +267,12 @@ def main():
                             filename=config['LOG_FILE_PATH'])
 
         log = get_last_log(config['LOG_DIR'], config['REPORT_DIR'])
-        if log:
+
+        if not log:
+            logging.info('Отсутствуют логи для обработки. Анализ остановлен.')
+        elif is_already_analyzed(log, config['REPORT_DIR']):
+            logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
+        else:
             report = get_report(log, config['ERROR_PERC_LIMIT'])
             if report:
                 save_report(log, report, config['REPORT_DIR'], config['REPORT_SIZE'])
