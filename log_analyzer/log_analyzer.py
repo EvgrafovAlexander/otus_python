@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import statistics
 from collections import namedtuple
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -170,24 +171,9 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int,
              'time_perc': round(100 * time_sum / full_time, 3),
              'time_avg': round(time_sum / len(times), 3),
              'time_max': round(max(times), 3),
-             'time_med': round(get_median(times), 3)}
+             'time_med': round(statistics.median(times), 3)}
         )
     return stat
-
-
-def get_median(values: List[float]) -> float:
-    """
-    Получение медианного значения
-    :values: список request_time
-
-    :return: медианное значение
-    """
-    values.sort()
-    if len(values) % 2:
-        return values[len(values) // 2]
-    else:
-        first = len(values) // 2
-        return (values[first] + values[first - 1]) / 2
 
 
 def save_report(log: namedtuple, report: List[dict], report_dir: str, report_size: int) -> None:
