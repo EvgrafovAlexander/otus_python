@@ -16,7 +16,7 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-config = {
+default_config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports/",
     "LOG_DIR": "./log/",
@@ -208,18 +208,19 @@ def save_report(log: namedtuple, report: List[dict], report_dir: str, report_siz
         report_file.write(report)
 
 
-def config_setter(args, conf_default: dict):
+def set_config(args, conf_default: dict) -> dict:
     """
     Настройка конфигурации с приоритетом
     по убыванию "из файла config -> из переданных параметров -> по умолчанию"
     :param args: аргументы пользователя
     :param conf_default: конфигурация по умолчанию
 
-    :return: сформированные значения конфигурационных параметров:
-             log_dir - директория чтения логов
-             report_dir - директория записей отчёта
-             report_size - предельный размер отчёта
-             err_perc_limit - предельный % ошибок
+    :return: словарь конфигурации с ключами:
+             LOG_DIR - директория чтения логов
+             REPORT_DIR - директория записей отчёта
+             REPORT_SIZE - предельный размер отчёта
+             ERROR_PERC_LIMIT - предельный % ошибок
+             LOG_FILE_PATH - путь до файла с логом
     """
     if args.config_file_path:
         # config из файла
@@ -233,9 +234,9 @@ def config_setter(args, conf_default: dict):
         log_dir = conf['DEFAULT']['LOG_DIR'] if 'LOG_DIR' in conf['DEFAULT'] \
             else conf_default['LOG_DIR']
         err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT'] \
-            else config['ERROR_PERC_LIMIT']
+            else conf_default['ERROR_PERC_LIMIT']
         log_file_path = conf['DEFAULT']['LOG_FILE_PATH'] if 'LOG_FILE_PATH' in conf['DEFAULT'] \
-            else config['LOG_FILE_PATH']
+            else conf_default['LOG_FILE_PATH']
     else:
         # config из параметров
         report_size = int(args.report_size) if args.report_size else conf_default['REPORT_SIZE']
@@ -252,7 +253,13 @@ def config_setter(args, conf_default: dict):
     logging.info('Предельный размер отчёта: %i', report_size)
     logging.info('Предельный %% ошибок: %.1f', err_perc_limit)
 
-    return log_dir, report_dir, report_size, err_perc_limit, log_file_path
+    config = {'LOG_DIR': log_dir,
+              'REPORT_DIR': report_dir,
+              'REPORT_SIZE': report_size,
+              'ERROR_PERC_LIMIT': err_perc_limit,
+              'LOG_FILE_PATH': log_file_path}
+
+    return config
 
 
 def get_args():
@@ -271,18 +278,18 @@ def main():
     args = get_args()
 
     try:
-        log_dir, report_dir, report_size, err_perc_limit, log_file_path = config_setter(args, config)
+        config = set_config(args, default_config)
 
         logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
                             level=logging.DEBUG,
                             datefmt='%Y.%m.%d %H:%M:%S',
-                            filename=log_file_path)
+                            filename=config['LOG_FILE_PATH'])
 
-        log = get_last_log(log_dir, report_dir)
+        log = get_last_log(config['LOG_DIR'], config['REPORT_DIR'])
         if log:
-            report = get_report(log, err_perc_limit)
+            report = get_report(log, config['ERROR_PERC_LIMIT'])
             if report:
-                save_report(log, report, report_dir, report_size)
+                save_report(log, report, config['REPORT_DIR'], config['REPORT_SIZE'])
 
     except Exception as e:
         logging.exception('Необработанное исключение %s, %s', type(e), e.args)
