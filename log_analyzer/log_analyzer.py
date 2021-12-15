@@ -28,8 +28,8 @@ default_config = {
 
 Log = namedtuple('Log', 'date name path is_gz')
 
-REF_PATTERN = r'(GET|POST).*(HTTP)'
 COMMON_PATTERN = r'^nginx-access-ui\.log-(?P<date>\d{8})(\.gz)?$'
+REF_PATTERN = r'(GET|POST).*(HTTP)'
 
 
 def get_report(log: Log, err_perc_limit: float) -> List[dict]:
@@ -65,9 +65,12 @@ def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
             date = found.group(1)
             is_gz = found.group(2)
 
-            date = datetime.strptime(date, "%Y%m%d")
-            if not last_log or date > last_log.date:
-                last_log = Log(date, name, log_dir, is_gz and True)
+            try:
+                date = datetime.strptime(date, "%Y%m%d")
+                if not last_log or date > last_log.date:
+                    last_log = Log(date, name, log_dir, is_gz and True)
+            except ValueError:
+                logging.error('Невозможно извлечь дату: %s', date)
 
     return last_log
 
