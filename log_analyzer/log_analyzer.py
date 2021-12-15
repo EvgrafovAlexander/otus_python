@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import statistics
+import sys
 from collections import namedtuple
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -203,19 +204,19 @@ def set_config(args, conf_default: dict) -> dict:
     """
     if args.config_file_path:
         # config из файла
-        conf = configparser.ConfigParser()
-        conf.read(args.config_file_path)
+        try:
+            conf = configparser.ConfigParser()
+            conf.read(args.config_file_path)
 
-        report_size = int(conf['DEFAULT']['REPORT_SIZE']) if 'REPORT_SIZE' in conf['DEFAULT'] \
-            else conf_default['REPORT_SIZE']
-        report_dir = conf['DEFAULT']['REPORT_DIR'] if 'REPORT_DIR' in conf['DEFAULT'] \
-            else conf_default['REPORT_DIR']
-        log_dir = conf['DEFAULT']['LOG_DIR'] if 'LOG_DIR' in conf['DEFAULT'] \
-            else conf_default['LOG_DIR']
-        err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT']) if 'ERROR_PERC_LIMIT' in conf['DEFAULT'] \
-            else conf_default['ERROR_PERC_LIMIT']
-        log_file_path = conf['DEFAULT']['LOG_FILE_PATH'] if 'LOG_FILE_PATH' in conf['DEFAULT'] \
-            else conf_default['LOG_FILE_PATH']
+            report_size = int(conf['DEFAULT']['REPORT_SIZE'])
+            report_dir = conf['DEFAULT']['REPORT_DIR']
+            log_dir = conf['DEFAULT']['LOG_DIR']
+            err_perc_limit = float(conf['DEFAULT']['ERROR_PERC_LIMIT'])
+            log_file_path = conf['DEFAULT']['LOG_FILE_PATH']
+
+        except Exception as e:
+            logging.exception('Возникло исключение при чтении конфигурационного файла %s, %s', type(e), e.args)
+            sys.exit(1)
     else:
         # config из параметров
         report_size = int(args.report_size) if args.report_size else conf_default['REPORT_SIZE']
