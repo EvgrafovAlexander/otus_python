@@ -46,11 +46,10 @@ def get_report(log: Log, err_perc_limit: float) -> List[dict]:
     return calc_stat(requests, full_request_time, full_request_cnt, error_cnt, err_perc_limit)
 
 
-def get_last_log(log_dir: str, report_dir: str) -> namedtuple or None:
+def get_last_log(log_dir: str) -> namedtuple or None:
     """
     Получение наименования файла последней записи логов интерфейса
     :log_dir: директория чтения логов
-    :report_dir: директория хранения отчётов
 
     :return: Tuple вида:
              date - дата записи лога
@@ -87,7 +86,7 @@ def parse_log(log: Log) -> Tuple[Dict[str, List[float]], int, int, int]:
     """
     requests = dict()
     full_request_time, full_request_cnt, error_cnt = 0, 0, 0
-    read_params = log.path + log.name, 'rb'
+    read_params = os.path.join(log.path, log.name), 'rb'
     open_func = gzip.open(*read_params) if log.is_gz else open(*read_params)
     with open_func as log_file:
         for line in log_file:
@@ -184,10 +183,11 @@ def save_report(log: namedtuple, report: List[dict], report_dir: str, report_siz
     :return: None
     """
     report.sort(key=lambda x: x['time_sum'], reverse=True)
-    with open(report_dir + 'report.html') as template:
+    with open(os.path.join(report_dir, 'report.html')) as template:
         template = template.read()
     report = re.sub('\$table_json', json.dumps(report[:report_size]), template)
-    with open(report_dir + '/' + 'report-' + log.date.strftime("%Y.%m.%d") + '.html', 'w') as report_file:
+
+    with open(os.path.join(report_dir, 'report-' + log.date.strftime("%Y.%m.%d") + '.html'), 'w') as report_file:
         report_file.write(report)
 
 
@@ -260,15 +260,14 @@ def get_args():
 def main():
     args = get_args()
 
+    config = set_config(args, default_config)
+
+    logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
+                        level=logging.DEBUG,
+                        datefmt='%Y.%m.%d %H:%M:%S',
+                        filename=config['LOG_FILE_PATH'])
     try:
-        config = set_config(args, default_config)
-
-        logging.basicConfig(format='[%(asctime)s] %(levelname).1s:%(message)s',
-                            level=logging.DEBUG,
-                            datefmt='%Y.%m.%d %H:%M:%S',
-                            filename=config['LOG_FILE_PATH'])
-
-        log = get_last_log(config['LOG_DIR'], config['REPORT_DIR'])
+        log = get_last_log(config['LOG_DIR'])
 
         if not log:
             logging.info('Отсутствуют логи для обработки. Анализ остановлен.')

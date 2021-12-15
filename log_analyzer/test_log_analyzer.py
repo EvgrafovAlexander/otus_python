@@ -49,7 +49,7 @@ class TestLogAnalyzer(unittest.TestCase):
             shutil.rmtree(dir, ignore_errors=True)
 
     def test_log_analyzer(self):
-        log = log_analyzer.get_last_log(self.log_dir, self.report_dir)
+        log = log_analyzer.get_last_log(self.log_dir)
         report = log_analyzer.get_report(log, self.err_perc_limit)
         self.assertEqual(datetime(2021, 9, 29), log.date)
         self.assertListEqual(self.expected_report, report)
