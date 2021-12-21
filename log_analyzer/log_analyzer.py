@@ -228,9 +228,6 @@ def set_config(args, conf_default: dict) -> dict:
         err_perc_limit = float(args.err_perc_limit) if args.err_perc_limit else conf_default['ERROR_PERC_LIMIT']
         log_file_path = args.log_file_path if args.log_file_path else conf_default['LOG_FILE_PATH']
 
-    for dir in (log_dir, report_dir):
-        os.makedirs(dir, exist_ok=True)
-
     logging.info('Директория чтения логов: %s', log_dir)
     logging.info('Директория записи отчётов: %s', report_dir)
     logging.info('Предельный размер отчёта: %i', report_size)
