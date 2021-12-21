@@ -115,7 +115,8 @@ def is_already_analyzed(log: Log, report_dir: str) -> bool:
 
     :return: флаг наличия отчёта
     """
-    return 'report-' + log.date.strftime("%Y.%m.%d") + '.html' in os.listdir(report_dir)
+    path = os.path.join(report_dir, 'report-' + log.date.strftime("%Y.%m.%d") + '.html')
+    return os.path.exists(path)
 
 
 def parse_line(line: bytes) -> Tuple[str, float] or None:
