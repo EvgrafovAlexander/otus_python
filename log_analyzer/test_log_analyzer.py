@@ -13,7 +13,6 @@ class TestLogAnalyzer(unittest.TestCase):
         cls.log_dir = './test_log/'
         cls.report_dir = './test_reports/'
         cls.report_size = 100
-        cls.err_perc_limit = 70
 
         for dir in (cls.log_dir, cls.report_dir):
             os.makedirs(dir, exist_ok=True)
@@ -50,7 +49,7 @@ class TestLogAnalyzer(unittest.TestCase):
 
     def test_log_analyzer(self):
         log = log_analyzer.get_last_log(self.log_dir)
-        report = log_analyzer.get_report(log, self.err_perc_limit)
+        report, error_perc = log_analyzer.get_report(log)
         self.assertEqual(datetime(2021, 9, 29), log.date)
         self.assertListEqual(self.expected_report, report)
 

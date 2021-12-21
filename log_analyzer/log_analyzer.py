@@ -32,18 +32,21 @@ COMMON_PATTERN = r'^nginx-access-ui\.log-(?P<date>\d{8})(\.gz)?$'
 REF_PATTERN = r'(GET|POST).*(HTTP)'
 
 
-def get_report(log: Log, err_perc_limit: float) -> List[dict]:
+def get_report(log: Log) -> Tuple[List[dict], float]:
     """
     Получение отчёта по ранее найденному логу
-    :err_perc_limit: предельный % ошибок
+    :log: данные по логу
 
     :return: Отчёт, сортированный по убыванию
             времени обработки запроса
+             Процент ошибок распознавания
     """
     if not log.name:
-        return []
+        return [], 0
     requests, full_request_time, full_request_cnt, error_cnt = parse_log(log)
-    return calc_stat(requests, full_request_time, full_request_cnt, error_cnt, err_perc_limit)
+    error_perc = 100 * error_cnt / full_request_cnt if full_request_cnt else 0
+
+    return calc_stat(requests, full_request_time, full_request_cnt), error_perc
 
 
 def get_last_log(log_dir: str) -> namedtuple or None:
@@ -112,7 +115,8 @@ def is_already_analyzed(log: Log, report_dir: str) -> bool:
 
     :return: флаг наличия отчёта
     """
-    return 'report-' + log.date.strftime("%Y.%m.%d") + '.html' in os.listdir(report_dir)
+    path = os.path.join(report_dir, 'report-' + log.date.strftime("%Y.%m.%d") + '.html')
+    return os.path.exists(path)
 
 
 def parse_line(line: bytes) -> Tuple[str, float] or None:
@@ -133,16 +137,13 @@ def parse_line(line: bytes) -> Tuple[str, float] or None:
     return None
 
 
-def calc_stat(requests: dict, full_time: float, full_cnt: int,
-              error_cnt: int, err_perc_limit: float) -> List[dict]:
+def calc_stat(requests: dict, full_time: float, full_cnt: int) -> List[dict]:
     """
     Вычисление статистических показателей
     и подготовка результирующих данных
     :requests: словарь вида url-запрос: список request_time
     :full_time: общая длительность выполнения запросов
     :full_cnt: общее количество выполненных запросов
-    :error_cnt: общее количество ошибок распознавания
-    :err_perc_limit: предельный % ошибок
 
     :return: список с показателями по каждому url
     """
@@ -150,11 +151,6 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int,
 
     if not full_cnt:
         logging.info('Не найдено ни одной записи в логе. Анализ остановлен.')
-        return stat
-    incorrect_perc = 100 * error_cnt / full_cnt
-    if incorrect_perc > err_perc_limit:
-        logging.info('Превышение порога ошибок парсинга:, %s %% > %s %%. Анализ остановлен',
-                     round(incorrect_perc, 1), err_perc_limit)
         return stat
 
     for request, times in requests.items():
@@ -228,9 +224,6 @@ def set_config(args, conf_default: dict) -> dict:
         err_perc_limit = float(args.err_perc_limit) if args.err_perc_limit else conf_default['ERROR_PERC_LIMIT']
         log_file_path = args.log_file_path if args.log_file_path else conf_default['LOG_FILE_PATH']
 
-    for dir in (log_dir, report_dir):
-        os.makedirs(dir, exist_ok=True)
-
     logging.info('Директория чтения логов: %s', log_dir)
     logging.info('Директория записи отчётов: %s', report_dir)
     logging.info('Предельный размер отчёта: %i', report_size)
@@ -274,7 +267,12 @@ def main():
         elif is_already_analyzed(log, config['REPORT_DIR']):
             logging.info('Отчёт по последнему логу уже существует. Анализ остановлен.')
         else:
-            report = get_report(log, config['ERROR_PERC_LIMIT'])
+            report, error_perc = get_report(log)
+
+            if error_perc > config['ERROR_PERC_LIMIT']:
+                logging.info('Превышение порога ошибок парсинга: %s %% > %s %%. Анализ остановлен',
+                             round(error_perc, 1), config['ERROR_PERC_LIMIT'])
+
             if report:
                 save_report(log, report, config['REPORT_DIR'], config['REPORT_SIZE'])
 
