@@ -8,7 +8,8 @@ import logging
 import hashlib
 import uuid
 from optparse import OptionParser
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+#from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 SALT = "Otus"
 ADMIN_LOGIN = "admin"
@@ -37,35 +38,50 @@ GENDERS = {
 
 
 class CharField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class ArgumentsField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class EmailField(CharField):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class PhoneField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class DateField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class BirthDayField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class GenderField(object):
-    pass
+    def __init__(self, required, nullable):
+        self.required = required
+        self.required = nullable
 
 
 class ClientIDsField(object):
-    pass
+    def __init__(self, required):
+        self.required = required
 
 
 class ClientsInterestsRequest(object):
@@ -134,7 +150,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
             if path in self.router:
                 try:
                     response, code = self.router[path]({"body": request, "headers": self.headers}, context, self.store)
-                except Exception, e:
+                except Exception as e:
                     logging.exception("Unexpected error: %s" % e)
                     code = INTERNAL_ERROR
             else:
