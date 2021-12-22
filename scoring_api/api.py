@@ -122,6 +122,9 @@ def check_auth(request):
 
 def method_handler(request, ctx, store):
     response, code = None, None
+    if not (request['body'] or request['headers']):
+        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
     return response, code
 
 
