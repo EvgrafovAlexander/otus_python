@@ -69,10 +69,12 @@ def get_last_log(log_dir: str) -> namedtuple or None:
 
             try:
                 date = datetime.strptime(date, "%Y%m%d")
-                if not last_log or date > last_log.date:
-                    last_log = Log(date, name, log_dir, is_gz and True)
             except ValueError:
                 logging.error('Невозможно извлечь дату: %s', date)
+                continue
+
+            if not last_log or date > last_log.date:
+                last_log = Log(date, name, log_dir, is_gz and True)
 
     return last_log
 
