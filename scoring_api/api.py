@@ -8,8 +8,7 @@ import logging
 import hashlib
 import uuid
 from optparse import OptionParser
-#from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 SALT = "Otus"
 ADMIN_LOGIN = "admin"
