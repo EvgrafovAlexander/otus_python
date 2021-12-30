@@ -16,7 +16,7 @@ import statistics
 import sys
 from collections import namedtuple
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 default_config = {
     "REPORT_SIZE": 1000,
@@ -43,7 +43,7 @@ def get_report(log: Log) -> Tuple[List[dict], float]:
     """
     if not log.name:
         return [], 0
-    requests, full_request_time, full_request_cnt, error_cnt = parse_log(log)
+    requests, full_request_time, full_request_cnt, error_cnt = parse_log(log, parse_line)
     error_perc = 100 * error_cnt / full_request_cnt if full_request_cnt else 0
 
     return calc_stat(requests, full_request_time, full_request_cnt), error_perc
@@ -69,18 +69,21 @@ def get_last_log(log_dir: str) -> namedtuple or None:
 
             try:
                 date = datetime.strptime(date, "%Y%m%d")
-                if not last_log or date > last_log.date:
-                    last_log = Log(date, name, log_dir, is_gz and True)
             except ValueError:
                 logging.error('Невозможно извлечь дату: %s', date)
+                continue
+
+            if not last_log or date > last_log.date:
+                last_log = Log(date, name, log_dir, is_gz and True)
 
     return last_log
 
 
-def parse_log(log: Log) -> Tuple[Dict[str, List[float]], int, int, int]:
+def parse_log(log: Log, parse_func: Callable) -> Tuple[Dict[str, List[float]], int, int, int]:
     """
     Сбор информации по логу
     :log_dir: информация о рассматриваемом логе
+    :parse_func: функция парсинга строки
 
     :return: requests - словарь вида url-запрос: список request_time
              full_time - общая длительность выполнения запросов
@@ -93,7 +96,7 @@ def parse_log(log: Log) -> Tuple[Dict[str, List[float]], int, int, int]:
     open_func = gzip.open(*read_params) if log.is_gz else open(*read_params)
     with open_func as log_file:
         for line in log_file:
-            line_info = parse_line(line)
+            line_info = parse_func(line)
             if line_info:
                 request, request_time = line_info
                 if request not in requests:
