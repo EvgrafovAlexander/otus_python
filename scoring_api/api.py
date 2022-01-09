@@ -39,7 +39,11 @@ GENDERS = {
 class CharField(object):
     def __init__(self, required, nullable):
         self.required = required
-        self.required = nullable
+        self.nullable = nullable
+
+    def __get__(self, instance, owner):
+        return self
+
 
 
 class ArgumentsField(object):
@@ -104,6 +108,13 @@ class MethodRequest(object):
     arguments = ArgumentsField(required=True, nullable=True)
     method = CharField(required=True, nullable=False)
 
+    def __init__(self, account, login, token, arguments, method):
+        self.account = account
+        self.login = login
+        self.token = token
+        self.arguments = arguments
+        self.method = method
+
     @property
     def is_admin(self):
         return self.login == ADMIN_LOGIN
@@ -123,6 +134,11 @@ def method_handler(request, ctx, store):
     response, code = None, None
     if not (request['body'] or request['headers']):
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
+    if not request['body'].keys() >= {'login', 'method', 'token', 'arguments'}:
+        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
+
 
     return response, code
 
