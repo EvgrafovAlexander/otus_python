@@ -37,12 +37,18 @@ GENDERS = {
 
 
 class CharField(object):
-    def __init__(self, required, nullable):
+    def __init__(self, value, required, nullable):
+        self.value = value
         self.required = required
         self.nullable = nullable
 
     def __get__(self, instance, owner):
-        return self
+        return self.value
+
+    def __set__(self, instance, value):
+        self.value = value
+
+
 
 
 
@@ -93,8 +99,8 @@ class ClientsInterestsRequest(object):
 
 
 class OnlineScoreRequest(object):
-    first_name = CharField(required=False, nullable=True)
-    last_name = CharField(required=False, nullable=True)
+    first_name = CharField(value=None, required=False, nullable=True)
+    last_name = CharField(value=None, required=False, nullable=True)
     email = EmailField(required=False, nullable=True)
     phone = PhoneField(required=False, nullable=True)
     birthday = BirthDayField(required=False, nullable=True)
@@ -102,11 +108,11 @@ class OnlineScoreRequest(object):
 
 
 class MethodRequest(object):
-    account = CharField(required=False, nullable=True)
-    login = CharField(required=True, nullable=True)
-    token = CharField(required=True, nullable=True)
+    account = CharField(value=None, required=False, nullable=True)
+    login = CharField(value=None, required=True, nullable=True)
+    token = CharField(value=None, required=True, nullable=True)
     arguments = ArgumentsField(required=True, nullable=True)
-    method = CharField(required=True, nullable=False)
+    method = CharField(value=None, required=True, nullable=False)
 
     def __init__(self, account, login, token, arguments, method):
         self.account = account
@@ -122,9 +128,9 @@ class MethodRequest(object):
 
 def check_auth(request):
     if request.is_admin:
-        digest = hashlib.sha512(datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).hexdigest()
+        digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
     else:
-        digest = hashlib.sha512(request.account + request.login + SALT).hexdigest()
+        digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
     if digest == request.token:
         return True
     return False
@@ -137,6 +143,13 @@ def method_handler(request, ctx, store):
 
     if not request['body'].keys() >= {'login', 'method', 'token', 'arguments'}:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
+    headers = request['headers']
+    body = request['body']
+    request = MethodRequest(body.get('account', None), body['login'], body['token'], body['arguments'], body['method'])
+
+    if not check_auth(request):
+        return ERRORS[FORBIDDEN], FORBIDDEN
 
 
 
