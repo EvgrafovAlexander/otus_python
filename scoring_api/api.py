@@ -46,10 +46,20 @@ class CharField(object):
         return self.value
 
     def __set__(self, instance, value):
-        self.value = value
+        if self.required and not self.nullable and value is None:
+            self.value = None
+        elif self.required and self.nullable and value is None:
+            self.value = ''
+        elif not self.required and not self.nullable and value is None:
+            self.value = None
+        elif self.is_valid(value):
+            self.value = value
+        else:
+            self.value = None
 
-
-
+    @staticmethod
+    def is_valid(value):
+        return isinstance(value, str)
 
 
 class ArgumentsField(object):
@@ -59,15 +69,47 @@ class ArgumentsField(object):
 
 
 class EmailField(CharField):
-    def __init__(self, required, nullable):
+    def __init__(self, value, required, nullable):
+        self.value = value
         self.required = required
-        self.required = nullable
+        self.nullable = nullable
+
+    def __get__(self, instance, owner):
+        return self.value
+
+    def __set__(self, instance, value):
+        if self.required and not value:
+            self.value = None
+        elif not self.nullable and not value:
+            self.value = None
+        elif isinstance(value, str) and '@' in value:
+            self.value = value
+        else:
+            self.value = None
 
 
 class PhoneField(object):
-    def __init__(self, required, nullable):
+    def __init__(self, value, required, nullable):
+        self.value = value
         self.required = required
-        self.required = nullable
+        self.nullable = nullable
+
+    def __get__(self, instance, owner):
+        return self.value
+
+    def __set__(self, instance, value):
+        if self.required and not value:
+            self.value = None
+        elif not self.nullable and not value:
+            self.value = None
+        elif isinstance(value, str | int):
+            value = str(value)
+            if len(value) == 11 and value[0] == '7':
+                self.value = value
+            else:
+                self.value = None
+        else:
+            self.value = None
 
 
 class DateField(object):
@@ -83,9 +125,29 @@ class BirthDayField(object):
 
 
 class GenderField(object):
-    def __init__(self, required, nullable):
+    def __init__(self, value, required, nullable):
+        self.value = value
         self.required = required
-        self.required = nullable
+        self.nullable = nullable
+
+    def __get__(self, instance, owner):
+        return self.value
+
+    def __set__(self, instance, value):
+        if self.required and not self.nullable and value is None:
+            self.value = None
+        elif self.required and self.nullable and value is None:
+            self.value = ''
+        elif not self.required and not self.nullable and value is None:
+            self.value = None
+        elif self.is_valid(value):
+            self.value = value
+        else:
+            self.value = None
+
+    @staticmethod
+    def is_valid(value):
+        return isinstance(value, int) and value in (0, 1, 2)
 
 
 class ClientIDsField(object):
@@ -101,10 +163,25 @@ class ClientsInterestsRequest(object):
 class OnlineScoreRequest(object):
     first_name = CharField(value=None, required=False, nullable=True)
     last_name = CharField(value=None, required=False, nullable=True)
-    email = EmailField(required=False, nullable=True)
-    phone = PhoneField(required=False, nullable=True)
+    email = EmailField(value=None, required=False, nullable=True)
+    phone = PhoneField(value=None, required=False, nullable=True)
     birthday = BirthDayField(required=False, nullable=True)
-    gender = GenderField(required=False, nullable=True)
+    gender = GenderField(value=None, required=False, nullable=True)
+
+    def __init__(self, first_name, last_name, email, phone, birthday, gender):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.phone = phone
+        self.birthday = birthday
+        self.gender = gender
+
+    @property
+    def is_valid(self):
+        if (self.phone and self.email) or (self.first_name and self.last_name) or (self.gender and self.birthday):
+            if self.phone and self.email and self.first_name and self.last_name and self.gender and self.birthday:
+                return True
+        return False
 
 
 class MethodRequest(object):
@@ -151,7 +228,15 @@ def method_handler(request, ctx, store):
     if not check_auth(request):
         return ERRORS[FORBIDDEN], FORBIDDEN
 
-
+    args = request.arguments
+    score_request = OnlineScoreRequest(args.get('first_name', None),
+                                       args.get('last_name', None),
+                                       args.get('email', None),
+                                       args.get('phone', None),
+                                       args.get('birthday', None),
+                                       args.get('gender', None))
+    if not score_request.is_valid:
+        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     return response, code
 
