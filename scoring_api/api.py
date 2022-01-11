@@ -76,23 +76,9 @@ class ArgumentsField(object):
 
 
 class EmailField(CharField):
-    def __init__(self, value, required, nullable):
-        self.value = value
-        self.required = required
-        self.nullable = nullable
-
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if self.required and not value:
-            self.value = None
-        elif not self.nullable and not value:
-            self.value = None
-        elif isinstance(value, str) and '@' in value:
-            self.value = value
-        else:
-            self.value = None
+    @staticmethod
+    def is_valid(value):
+        return isinstance(value, str) and '@' in value
 
 
 class PhoneField(AbstractField):
