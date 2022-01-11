@@ -207,6 +207,10 @@ def method_handler(request, ctx, store):
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
+    #exec('а = score_request.phone')
+    #asf = ', '.join(i for i in dir(score_request) if not i.startswith('__'))
+
+
     return response, code
 
 
