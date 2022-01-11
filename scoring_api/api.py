@@ -8,6 +8,7 @@ import logging
 import hashlib
 import uuid
 from abc import ABC
+from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -20,6 +21,7 @@ FORBIDDEN = 403
 NOT_FOUND = 404
 INVALID_REQUEST = 422
 INTERNAL_ERROR = 500
+INVALID_VALUE = -1
 ERRORS = {
     BAD_REQUEST: "Bad Request",
     FORBIDDEN: "Forbidden",
@@ -47,16 +49,18 @@ class AbstractField(ABC):
         return self.value
 
     def __set__(self, instance, value):
-        if self.required and not self.nullable and value is None:
-            self.value = None
-        elif self.required and self.nullable and value is None:
-            self.value = ''
-        elif not self.required and not self.nullable and value is None:
-            self.value = None
+        # None, если значение отсутствует
+        # INVALID_VALUE, если невалидное значение
+        # value, если валидное значение
+        if value is None:
+            if self.required or not self.nullable:
+                self.value = INVALID_VALUE
+            else:
+                self.value = None
         elif self.is_valid(value):
             self.value = value
         else:
-            self.value = None
+            self.value = INVALID_VALUE
 
     @staticmethod
     def is_valid(value):
@@ -96,10 +100,14 @@ class DateField(object):
         self.required = nullable
 
 
-class BirthDayField(object):
-    def __init__(self, required, nullable):
-        self.required = required
-        self.required = nullable
+class BirthDayField(AbstractField):
+    @staticmethod
+    def is_valid(value):
+        try:
+            value = datetime.datetime.strptime(value, "%d.%m.%Y")
+            return relativedelta(datetime.datetime.now(), value).years < 70
+        except:
+            return False
 
 
 class GenderField(AbstractField):
@@ -123,7 +131,7 @@ class OnlineScoreRequest(object):
     last_name = CharField(value=None, required=False, nullable=True)
     email = EmailField(value=None, required=False, nullable=True)
     phone = PhoneField(value=None, required=False, nullable=True)
-    birthday = BirthDayField(required=False, nullable=True)
+    birthday = BirthDayField(value=None, required=False, nullable=True)
     gender = GenderField(value=None, required=False, nullable=True)
 
     def __init__(self, first_name, last_name, email, phone, birthday, gender):
@@ -136,8 +144,10 @@ class OnlineScoreRequest(object):
 
     @property
     def is_valid(self):
-        if (self.phone and self.email) or (self.first_name and self.last_name) or (self.gender and self.birthday):
-            if self.phone and self.email and self.first_name and self.last_name and self.gender and self.birthday:
+        if INVALID_VALUE not in (self.phone, self.email, self.first_name, self.last_name, self.gender, self.birthday):
+            if (self.phone and self.email)\
+                    or (self.first_name and self.last_name)\
+                    or (self.gender is not None and self.birthday):
                 return True
         return False
 
@@ -187,6 +197,7 @@ def method_handler(request, ctx, store):
         return ERRORS[FORBIDDEN], FORBIDDEN
 
     args = request.arguments
+    print(args)
     score_request = OnlineScoreRequest(args.get('first_name', None),
                                        args.get('last_name', None),
                                        args.get('email', None),
