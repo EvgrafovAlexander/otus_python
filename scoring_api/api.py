@@ -8,6 +8,7 @@ import logging
 import hashlib
 import uuid
 from abc import ABC
+from collections import namedtuple
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -38,6 +39,8 @@ GENDERS = {
     FEMALE: "female",
 }
 
+ValidatedValue = namedtuple('ValidatedValue', 'value is_valid')
+
 
 class AbstractField(ABC):
     def __init__(self, value, required, nullable):
@@ -54,13 +57,13 @@ class AbstractField(ABC):
         # value, если валидное значение
         if value is None:
             if self.required or not self.nullable:
-                self.value = INVALID_VALUE
+                self.value = ValidatedValue(value, False)
             else:
-                self.value = None
+                self.value = ValidatedValue(value, True)
         elif self.is_valid(value):
-            self.value = value
+            self.value = ValidatedValue(value, True)
         else:
-            self.value = INVALID_VALUE
+            self.value = ValidatedValue(value, False)
 
     @staticmethod
     def is_valid(value):
@@ -144,11 +147,14 @@ class OnlineScoreRequest(object):
 
     @property
     def is_valid(self):
-        if INVALID_VALUE not in (self.phone, self.email, self.first_name, self.last_name, self.gender, self.birthday):
-            if (self.phone and self.email)\
-                    or (self.first_name and self.last_name)\
-                    or (self.gender is not None and self.birthday):
+        if self.phone.is_valid and self.email.is_valid and self.first_name.is_valid and self.last_name.is_valid\
+                and self.gender.is_valid and self.birthday.is_valid:
+
+            if (self.phone.value and self.email.value)\
+                    or (self.first_name.value and self.last_name.value)\
+                    or (self.gender.value is not None and self.birthday.value):
                 return True
+
         return False
 
 
@@ -168,15 +174,15 @@ class MethodRequest(object):
 
     @property
     def is_admin(self):
-        return self.login == ADMIN_LOGIN
+        return self.login.value == ADMIN_LOGIN
 
 
 def check_auth(request):
     if request.is_admin:
         digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
     else:
-        digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
-    if digest == request.token:
+        digest = hashlib.sha512((request.account.value + request.login.value + SALT).encode('utf-8')).hexdigest()
+    if digest == request.token.value:
         return True
     return False
 
