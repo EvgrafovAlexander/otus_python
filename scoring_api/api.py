@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import abc
+
 import json
 import datetime
 import logging
 import hashlib
 import uuid
+from abc import ABC
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -36,7 +37,7 @@ GENDERS = {
 }
 
 
-class CharField(object):
+class AbstractField(ABC):
     def __init__(self, value, required, nullable):
         self.value = value
         self.required = required
@@ -57,6 +58,12 @@ class CharField(object):
         else:
             self.value = None
 
+    @staticmethod
+    def is_valid(value):
+        pass
+
+
+class CharField(AbstractField):
     @staticmethod
     def is_valid(value):
         return isinstance(value, str)
@@ -88,28 +95,13 @@ class EmailField(CharField):
             self.value = None
 
 
-class PhoneField(object):
-    def __init__(self, value, required, nullable):
-        self.value = value
-        self.required = required
-        self.nullable = nullable
-
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if self.required and not value:
-            self.value = None
-        elif not self.nullable and not value:
-            self.value = None
-        elif isinstance(value, str | int):
+class PhoneField(AbstractField):
+    @staticmethod
+    def is_valid(value):
+        if isinstance(value, str | int):
             value = str(value)
-            if len(value) == 11 and value[0] == '7':
-                self.value = value
-            else:
-                self.value = None
-        else:
-            self.value = None
+            return len(value) == 11 and value[0] == '7'
+        return False
 
 
 class DateField(object):
@@ -124,27 +116,7 @@ class BirthDayField(object):
         self.required = nullable
 
 
-class GenderField(object):
-    def __init__(self, value, required, nullable):
-        self.value = value
-        self.required = required
-        self.nullable = nullable
-
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if self.required and not self.nullable and value is None:
-            self.value = None
-        elif self.required and self.nullable and value is None:
-            self.value = ''
-        elif not self.required and not self.nullable and value is None:
-            self.value = None
-        elif self.is_valid(value):
-            self.value = value
-        else:
-            self.value = None
-
+class GenderField(AbstractField):
     @staticmethod
     def is_valid(value):
         return isinstance(value, int) and value in (0, 1, 2)
