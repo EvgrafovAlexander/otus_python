@@ -227,14 +227,14 @@ def method_handler(request, ctx, store):
 
     args = request.arguments
 
-    if request.method == 'online_score':
+    if request.method.value == 'online_score':
         score_request = OnlineScoreRequest(args.get('first_name', None),
                                            args.get('last_name', None),
                                            args.get('email', None),
                                            args.get('phone', None),
                                            args.get('birthday', None),
                                            args.get('gender', None))
-    elif request.method == 'clients_interests':
+    elif request.method.value == 'clients_interests':
         score_request = ClientsInterestsRequest(args.get('first_name', None),
                                            args.get('last_name', None))
     else:
