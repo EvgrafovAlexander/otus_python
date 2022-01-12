@@ -97,10 +97,13 @@ class PhoneField(AbstractField):
         return False
 
 
-class DateField(object):
-    def __init__(self, required, nullable):
-        self.required = required
-        self.required = nullable
+class DateField(AbstractField):
+    @staticmethod
+    def is_valid(value):
+        try:
+            return isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
+        except:
+            return False
 
 
 class BirthDayField(AbstractField):
@@ -120,13 +123,33 @@ class GenderField(AbstractField):
 
 
 class ClientIDsField(object):
-    def __init__(self, required):
+    def __init__(self, value, required):
+        self.value = value
         self.required = required
+
+    def __get__(self, instance, owner):
+        return self.value
+
+    def __set__(self, instance, value):
+        if value is None and self.required:
+            self.value = ValidatedValue(value, False)
+        elif self.is_valid(value):
+            self.value = ValidatedValue(value, True)
+        else:
+            self.value = ValidatedValue(value, False)
+
+    @staticmethod
+    def is_valid(value):
+        return True
 
 
 class ClientsInterestsRequest(object):
-    client_ids = ClientIDsField(required=True)
-    date = DateField(required=False, nullable=True)
+    client_ids = ClientIDsField(value=None, required=True)
+    date = DateField(value=None, required=False, nullable=True)
+
+    def __init__(self, client_ids, date):
+        self.client_ids = client_ids
+        self.date = date
 
 
 class OnlineScoreRequest(object):
@@ -203,13 +226,20 @@ def method_handler(request, ctx, store):
         return ERRORS[FORBIDDEN], FORBIDDEN
 
     args = request.arguments
-    print(args)
-    score_request = OnlineScoreRequest(args.get('first_name', None),
-                                       args.get('last_name', None),
-                                       args.get('email', None),
-                                       args.get('phone', None),
-                                       args.get('birthday', None),
-                                       args.get('gender', None))
+
+    if request.method == 'online_score':
+        score_request = OnlineScoreRequest(args.get('first_name', None),
+                                           args.get('last_name', None),
+                                           args.get('email', None),
+                                           args.get('phone', None),
+                                           args.get('birthday', None),
+                                           args.get('gender', None))
+    elif request.method == 'clients_interests':
+        score_request = ClientsInterestsRequest(args.get('first_name', None),
+                                           args.get('last_name', None))
+    else:
+        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
