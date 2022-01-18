@@ -13,6 +13,8 @@ from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+import scoring
+
 SALT = "Otus"
 ADMIN_LOGIN = "admin"
 ADMIN_SALT = "42"
@@ -170,15 +172,24 @@ class OnlineScoreRequest(object):
 
     @property
     def is_valid(self):
-        if self.phone.is_valid and self.email.is_valid and self.first_name.is_valid and self.last_name.is_valid\
+        if self.phone.is_valid and self.email.is_valid and self.first_name.is_valid and self.last_name.is_valid \
                 and self.gender.is_valid and self.birthday.is_valid:
 
-            if (self.phone.value and self.email.value)\
-                    or (self.first_name.value and self.last_name.value)\
+            if (self.phone.value and self.email.value) \
+                    or (self.first_name.value and self.last_name.value) \
                     or (self.gender.value is not None and self.birthday.value):
                 return True
-
         return False
+
+    def get_context(self):
+        context = []
+        for attr in dir(self):
+            if not (attr.startswith('_')
+                    or attr.startswith('is_valid') or attr.startswith('get_context')):
+                attribute = getattr(self, attr)
+                if attribute.value is not None and attribute.is_valid:
+                    context.append(attr)
+        return {'has': context}
 
 
 class MethodRequest(object):
@@ -236,16 +247,24 @@ def method_handler(request, ctx, store):
                                            args.get('gender', None))
     elif request.method.value == 'clients_interests':
         score_request = ClientsInterestsRequest(args.get('first_name', None),
-                                           args.get('last_name', None))
+                                                args.get('last_name', None))
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    #exec('а = score_request.phone')
-    #asf = ', '.join(i for i in dir(score_request) if not i.startswith('__'))
+    if request.is_admin:
+        score = 42
+    else:
+        score = scoring.get_score(store, score_request.phone, score_request.email, score_request.birthday,
+                                  score_request.gender, score_request.first_name, score_request.last_name)
 
+    code = OK
+    response = {'score': score, 'context': score_request.get_context()}
+
+    # exec('а = score_request.phone')
+    # asf = ', '.join(i for i in dir(score_request) if not i.startswith('__'))
 
     return response, code
 
