@@ -54,9 +54,6 @@ class AbstractField(ABC):
         return self.value
 
     def __set__(self, instance, value):
-        # None, если значение отсутствует
-        # INVALID_VALUE, если невалидное значение
-        # value, если валидное значение
         if value is None:
             if self.required or not self.nullable:
                 self.value = ValidatedValue(value, False)
@@ -245,6 +242,13 @@ def method_handler(request, ctx, store):
                                            args.get('phone', None),
                                            args.get('birthday', None),
                                            args.get('gender', None))
+
+        if request.is_admin:
+            score = 42
+        else:
+            score = scoring.get_score(store, score_request.phone, score_request.email, score_request.birthday,
+                                      score_request.gender, score_request.first_name, score_request.last_name)
+
     elif request.method.value == 'clients_interests':
         score_request = ClientsInterestsRequest(args.get('first_name', None),
                                                 args.get('last_name', None))
@@ -254,11 +258,7 @@ def method_handler(request, ctx, store):
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    if request.is_admin:
-        score = 42
-    else:
-        score = scoring.get_score(store, score_request.phone, score_request.email, score_request.birthday,
-                                  score_request.gender, score_request.first_name, score_request.last_name)
+
 
     code = OK
     response = {'score': score, 'context': score_request.get_context()}
