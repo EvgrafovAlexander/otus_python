@@ -158,6 +158,10 @@ class ClientsInterestsRequest(object):
             return True
         return False
 
+    def get_context(self):
+        context = len(self.client_ids.value) if self.client_ids.is_valid else 0
+        return {'has': context}
+
 
 class OnlineScoreRequest(object):
     first_name = CharField(value=None, required=False, nullable=True)
@@ -260,14 +264,18 @@ def method_handler(request, ctx, store):
     elif request.method.value == 'clients_interests':
         score_request = ClientsInterestsRequest(args.get('client_ids', None),
                                                 args.get('date', None))
+
+        score = scoring.get_interests(None, None)
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
+    context = score_request.get_context()
+
     code = OK
-    response = {'score': score, 'context': score_request.get_context()}
+    response = {'score': score, 'context': context}
 
     # exec('а = score_request.phone')
     # asf = ', '.join(i for i in dir(score_request) if not i.startswith('__'))
