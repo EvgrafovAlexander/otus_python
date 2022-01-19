@@ -3,6 +3,8 @@ import datetime
 import functools
 import unittest
 
+from zmq.utils.strtypes import basestring
+
 import api
 
 

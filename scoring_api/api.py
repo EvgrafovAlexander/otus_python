@@ -139,7 +139,9 @@ class ClientIDsField(object):
 
     @staticmethod
     def is_valid(value):
-        return True
+        if isinstance(value, list) and value and all(isinstance(x, int) for x in value):
+            return True
+        return False
 
 
 class ClientsInterestsRequest(object):
@@ -149,6 +151,12 @@ class ClientsInterestsRequest(object):
     def __init__(self, client_ids, date):
         self.client_ids = client_ids
         self.date = date
+
+    @property
+    def is_valid(self):
+        if self.client_ids.is_valid and self.date.is_valid:
+            return True
+        return False
 
 
 class OnlineScoreRequest(object):
@@ -250,15 +258,13 @@ def method_handler(request, ctx, store):
                                       score_request.gender, score_request.first_name, score_request.last_name)
 
     elif request.method.value == 'clients_interests':
-        score_request = ClientsInterestsRequest(args.get('first_name', None),
-                                                args.get('last_name', None))
+        score_request = ClientsInterestsRequest(args.get('client_ids', None),
+                                                args.get('date', None))
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
-
 
     code = OK
     response = {'score': score, 'context': score_request.get_context()}
