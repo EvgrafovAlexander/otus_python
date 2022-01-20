@@ -160,16 +160,17 @@ class ClientsInterestsRequest(object):
 
     def get_context(self):
         context = len(self.client_ids.value) if self.client_ids.is_valid else 0
-        return {'has': context}
+        return context
 
-    def get_response(self):
+    def get_response(self, request, context, store):
         result = dict()
         if not self.client_ids.is_valid:
             return result
         for client_id in self.client_ids.value:
             interests = scoring.get_interests(None, None)
             result[client_id] = interests
-        return result
+        context['has'] = self.get_context()
+        return result, OK
 
 
 class OnlineScoreRequest(object):
@@ -209,7 +210,7 @@ class OnlineScoreRequest(object):
                 attribute = getattr(self, attr)
                 if attribute.value is not None and attribute.is_valid:
                     context.append(attr)
-        return {'has': context}
+        return context
 
     def get_response(self, request, context, store):
         if request.is_admin:
@@ -219,7 +220,7 @@ class OnlineScoreRequest(object):
                                       self.gender, self.first_name, self.last_name)
 
         context['has'] = self.get_context()
-        return {'score': score}
+        return {'score': score}, OK
 
 
 class MethodRequest(object):
@@ -276,32 +277,16 @@ def method_handler(request, ctx, store):
                                            args.get('birthday', None),
                                            args.get('gender', None))
 
-        if request.is_admin:
-            score = 42
-        else:
-            score = scoring.get_score(store, score_request.phone, score_request.email, score_request.birthday,
-                                      score_request.gender, score_request.first_name, score_request.last_name)
-
     elif request.method.value == 'clients_interests':
         score_request = ClientsInterestsRequest(args.get('client_ids', None),
                                                 args.get('date', None))
-
-        score = score_request.get_response()
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     if not score_request.is_valid:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    context = score_request.get_context()
-
-    if request.method.value == 'online_score':
-        response = {'score': score, 'context': context}
-    else:
-        response = score
-
-    code = OK
-    return response, code
+    return score_request.get_response(request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
