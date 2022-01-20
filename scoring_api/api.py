@@ -169,7 +169,7 @@ class ClientsInterestsRequest(object):
         for client_id in self.client_ids.value:
             interests = scoring.get_interests(None, None)
             result[client_id] = interests
-        context['has'] = self.get_context()
+        context['nclients'] = self.get_context()
         return result, OK
 
 
@@ -253,14 +253,12 @@ def check_auth(request):
 
 
 def method_handler(request, ctx, store):
-    response, code = None, None
     if not (request['body'] or request['headers']):
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     if not request['body'].keys() >= {'login', 'method', 'token', 'arguments'}:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    headers = request['headers']
     body = request['body']
     request = MethodRequest(body.get('account', None), body['login'], body['token'], body['arguments'], body['method'])
 
