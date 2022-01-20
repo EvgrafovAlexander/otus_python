@@ -162,6 +162,15 @@ class ClientsInterestsRequest(object):
         context = len(self.client_ids.value) if self.client_ids.is_valid else 0
         return {'has': context}
 
+    def get_result(self):
+        result = dict()
+        if not self.client_ids.is_valid:
+            return result
+        for client_id in self.client_ids.value:
+            interests = scoring.get_interests(None, None)
+            result[client_id] = interests
+        return result
+
 
 class OnlineScoreRequest(object):
     first_name = CharField(value=None, required=False, nullable=True)
@@ -265,7 +274,7 @@ def method_handler(request, ctx, store):
         score_request = ClientsInterestsRequest(args.get('client_ids', None),
                                                 args.get('date', None))
 
-        score = scoring.get_interests(None, None)
+        score = score_request.get_result()
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
@@ -274,12 +283,12 @@ def method_handler(request, ctx, store):
 
     context = score_request.get_context()
 
+    if request.method.value == 'online_score':
+        response = {'score': score, 'context': context}
+    else:
+        response = score
+
     code = OK
-    response = {'score': score, 'context': context}
-
-    # exec('а = score_request.phone')
-    # asf = ', '.join(i for i in dir(score_request) if not i.startswith('__'))
-
     return response, code
 
 
