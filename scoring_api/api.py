@@ -162,7 +162,7 @@ class ClientsInterestsRequest(object):
         context = len(self.client_ids.value) if self.client_ids.is_valid else 0
         return {'has': context}
 
-    def get_result(self):
+    def get_response(self):
         result = dict()
         if not self.client_ids.is_valid:
             return result
@@ -203,11 +203,23 @@ class OnlineScoreRequest(object):
         context = []
         for attr in dir(self):
             if not (attr.startswith('_')
-                    or attr.startswith('is_valid') or attr.startswith('get_context')):
+                    or attr.startswith('is_valid')
+                    or attr.startswith('get_context')
+                    or attr.startswith('get_response')):
                 attribute = getattr(self, attr)
                 if attribute.value is not None and attribute.is_valid:
                     context.append(attr)
         return {'has': context}
+
+    def get_response(self, request, context, store):
+        if request.is_admin:
+            score = 42
+        else:
+            score = scoring.get_score(store, self.phone, self.email, self.birthday,
+                                      self.gender, self.first_name, self.last_name)
+
+        context['has'] = self.get_context()
+        return {'score': score}
 
 
 class MethodRequest(object):
@@ -274,7 +286,7 @@ def method_handler(request, ctx, store):
         score_request = ClientsInterestsRequest(args.get('client_ids', None),
                                                 args.get('date', None))
 
-        score = score_request.get_result()
+        score = score_request.get_response()
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
