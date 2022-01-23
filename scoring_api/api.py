@@ -45,8 +45,8 @@ ValidatedValue = namedtuple('ValidatedValue', 'value is_valid')
 
 
 class AbstractField(ABC):
-    def __init__(self, value, required, nullable):
-        self.value = value
+    def __init__(self, required, nullable):
+        self.value = None
         self.required = required
         self.nullable = nullable
 
@@ -122,8 +122,8 @@ class GenderField(AbstractField):
 
 
 class ClientIDsField(object):
-    def __init__(self, value, required):
-        self.value = value
+    def __init__(self, required):
+        self.value = None
         self.required = required
 
     def __get__(self, instance, owner):
@@ -145,8 +145,8 @@ class ClientIDsField(object):
 
 
 class ClientsInterestsRequest(object):
-    client_ids = ClientIDsField(value=None, required=True)
-    date = DateField(value=None, required=False, nullable=True)
+    client_ids = ClientIDsField(required=True)
+    date = DateField(required=False, nullable=True)
 
     def __init__(self, client_ids, date):
         self.client_ids = client_ids
@@ -174,12 +174,12 @@ class ClientsInterestsRequest(object):
 
 
 class OnlineScoreRequest(object):
-    first_name = CharField(value=None, required=False, nullable=True)
-    last_name = CharField(value=None, required=False, nullable=True)
-    email = EmailField(value=None, required=False, nullable=True)
-    phone = PhoneField(value=None, required=False, nullable=True)
-    birthday = BirthDayField(value=None, required=False, nullable=True)
-    gender = GenderField(value=None, required=False, nullable=True)
+    first_name = CharField(required=False, nullable=True)
+    last_name = CharField(required=False, nullable=True)
+    email = EmailField(required=False, nullable=True)
+    phone = PhoneField(required=False, nullable=True)
+    birthday = BirthDayField(required=False, nullable=True)
+    gender = GenderField(required=False, nullable=True)
 
     def __init__(self, first_name, last_name, email, phone, birthday, gender):
         self.first_name = first_name
@@ -224,11 +224,11 @@ class OnlineScoreRequest(object):
 
 
 class MethodRequest(object):
-    account = CharField(value=None, required=False, nullable=True)
-    login = CharField(value=None, required=True, nullable=True)
-    token = CharField(value=None, required=True, nullable=True)
+    account = CharField(required=False, nullable=True)
+    login = CharField(required=True, nullable=True)
+    token = CharField(required=True, nullable=True)
     arguments = ArgumentsField(required=True, nullable=True)
-    method = CharField(value=None, required=True, nullable=False)
+    method = CharField(required=True, nullable=False)
 
     def __init__(self, account, login, token, arguments, method):
         self.account = account
@@ -260,7 +260,11 @@ def method_handler(request, ctx, store):
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
     body = request['body']
-    request = MethodRequest(body.get('account', None), body['login'], body['token'], body['arguments'], body['method'])
+    request = MethodRequest(body.get('account', None),
+                            body['login'],
+                            body['token'],
+                            body['arguments'],
+                            body['method'])
 
     if not check_auth(request):
         return ERRORS[FORBIDDEN], FORBIDDEN
@@ -311,7 +315,9 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
             logging.info("%s: %s %s" % (self.path, data_string, context["request_id"]))
             if path in self.router:
                 try:
-                    response, code = self.router[path]({"body": request, "headers": self.headers}, context, self.store)
+                    response, code = self.router[path]({"body": request, "headers": self.headers},
+                                                       context,
+                                                       self.store)
                 except Exception as e:
                     logging.exception("Unexpected error: %s" % e)
                     code = INTERNAL_ERROR
