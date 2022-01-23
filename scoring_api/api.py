@@ -152,11 +152,16 @@ class ClientsInterestsRequest(object):
         self.client_ids = client_ids
         self.date = date
 
-    @property
-    def is_valid(self):
-        if self.client_ids.is_valid and self.date.is_valid:
-            return True
-        return False
+    def validate(self):
+        for attr in dir(self):
+            if not (attr.startswith('_')
+                    or attr.startswith('validate')
+                    or attr.startswith('get_context')
+                    or attr.startswith('get_response')):
+                attribute = getattr(self, attr)
+                if not attribute.is_valid:
+                    return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
+        return True, None
 
     def get_context(self):
         context = len(self.client_ids.value) if self.client_ids.is_valid else 0
@@ -189,22 +194,28 @@ class OnlineScoreRequest(object):
         self.birthday = birthday
         self.gender = gender
 
-    @property
-    def is_valid(self):
-        if self.phone.is_valid and self.email.is_valid and self.first_name.is_valid and self.last_name.is_valid \
-                and self.gender.is_valid and self.birthday.is_valid:
+    def validate(self):
+        for attr in dir(self):
+            if not (attr.startswith('_')
+                    or attr.startswith('validate')
+                    or attr.startswith('get_context')
+                    or attr.startswith('get_response')):
+                attribute = getattr(self, attr)
+                if not attribute.is_valid:
+                    return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
 
-            if (self.phone.value and self.email.value) \
-                    or (self.first_name.value and self.last_name.value) \
-                    or (self.gender.value is not None and self.birthday.value):
-                return True
-        return False
+        if (self.phone.value and self.email.value) \
+                or (self.first_name.value and self.last_name.value) \
+                or (self.gender.value is not None and self.birthday.value):
+            return True, None
+        return False, {'error': 'Required field combinations not found: phone and email,'
+                                ' first name and last name, gender and birthday'}
 
     def get_context(self):
         context = []
         for attr in dir(self):
             if not (attr.startswith('_')
-                    or attr.startswith('is_valid')
+                    or attr.startswith('validate')
                     or attr.startswith('get_context')
                     or attr.startswith('get_response')):
                 attribute = getattr(self, attr)
@@ -285,8 +296,10 @@ def method_handler(request, ctx, store):
     else:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    if not score_request.is_valid:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+    is_valid, valid_info = score_request.validate()
+
+    if not is_valid:
+        return valid_info, INVALID_REQUEST
 
     return score_request.get_response(request, ctx, store)
 
