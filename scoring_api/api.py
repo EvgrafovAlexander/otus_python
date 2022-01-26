@@ -265,7 +265,7 @@ def check_auth(request):
 
 def method_handler(request, ctx, store):
     if not (request['body'] or request['headers']):
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+        return None, INVALID_REQUEST
 
     if not request['body'].keys() >= {'login', 'method', 'token', 'arguments'}:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
