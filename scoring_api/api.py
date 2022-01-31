@@ -154,10 +154,7 @@ class ClientsInterestsRequest(object):
 
     def validate(self):
         for attr in dir(self):
-            if not (attr.startswith('_')
-                    or attr.startswith('validate')
-                    or attr.startswith('get_context')
-                    or attr.startswith('get_response')):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
                 attribute = getattr(self, attr)
                 if not attribute.is_valid:
                     return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
@@ -203,10 +200,7 @@ class OnlineScoreRequest(object):
     def get_context(self):
         context = []
         for attr in dir(self):
-            if not (attr.startswith('_')
-                    or attr.startswith('validate')
-                    or attr.startswith('get_context')
-                    or attr.startswith('get_response')):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
                 attribute = getattr(self, attr)
                 if attribute is not None:
                     context.append(attr)
