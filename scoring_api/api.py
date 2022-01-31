@@ -56,7 +56,7 @@ class AbstractField(ABC):
             if self.required:
                 raise ValidationError("Required value not found")
             elif not self.nullable:
-                raise ValidationError("Required can't be zero")
+                raise ValidationError("Required value can't be zero")
             else:
                 self.value = value
         else:
