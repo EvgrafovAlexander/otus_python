@@ -133,7 +133,16 @@ class ClientIDsField(AbstractField):
             raise ValidationError("Values in the list must be integers")
 
 
-class Structure:
+class Meta(type):
+    def __new__(cls, clsname, bases, clsdict):
+        fields = [key for key, val in clsdict.items()
+                  if isinstance(val, AbstractField)]
+        for name in fields:
+            clsdict[name].name = name
+        return super().__new__(cls, clsname, bases, dict(clsdict))
+
+
+class Structure(metaclass=Meta):
     def __init__(self, args):
         for name in dir(self):
             if not name.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
