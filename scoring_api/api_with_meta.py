@@ -240,26 +240,20 @@ def method_handler(request, ctx, store):
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
 
-    body = request['body']
     try:
-        request = MethodRequest(body)
-    except Exception:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+        request = MethodRequest(request['body'])
 
-    if not check_auth(request):
-        return ERRORS[FORBIDDEN], FORBIDDEN
+        if not check_auth(request):
+            return ERRORS[FORBIDDEN], FORBIDDEN
 
-    args = request.arguments
+        args = request.arguments
 
-    try:
         if request.method == 'online_score':
             score_request = OnlineScoreRequest(args)
-
         elif request.method == 'clients_interests':
             score_request = ClientsInterestsRequest(args)
         else:
             return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
