@@ -124,24 +124,13 @@ class GenderField(AbstractField):
 
 
 class ClientIDsField(AbstractField):
-    def __init__(self, required):
-        self.value = None
-        self.required = required
-
-    def __set__(self, instance, value):
-        if value is None and self.required:
-            raise ValidationError("Required value not found")
-        else:
-            self.is_valid(value)
-            self.value = value
-
     def is_valid(self, value):
         if not isinstance(value, list):
-            raise TypeError("Value must be list")
+            raise TypeError("Value must be list type")
         if not value:
             raise ValueError("Value must not be empty")
         if not all(isinstance(x, int) for x in value):
-            raise ValidationError("Values in list must be int type")
+            raise ValidationError("Values in the list must be integers")
 
 
 class MetaRequest(type):
@@ -161,8 +150,20 @@ class Structure(metaclass=MetaRequest):
                 setattr(self, attr, attrs.get(attr, None))
 
 
+class MethodRequest(Structure):
+    account = CharField(required=False, nullable=True)
+    login = CharField(required=True, nullable=True)
+    token = CharField(required=True, nullable=True)
+    arguments = ArgumentsField(required=True, nullable=True)
+    method = CharField(required=True, nullable=False)
+
+    @property
+    def is_admin(self):
+        return self.login == ADMIN_LOGIN
+
+
 class ClientsInterestsRequest(Structure):
-    client_ids = ClientIDsField(required=True)
+    client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
 
     def validate(self):
@@ -224,18 +225,6 @@ class OnlineScoreRequest(Structure):
 
         context['has'] = self.get_context()
         return {'score': score}, OK
-
-
-class MethodRequest(Structure):
-    account = CharField(required=False, nullable=True)
-    login = CharField(required=True, nullable=True)
-    token = CharField(required=True, nullable=True)
-    arguments = ArgumentsField(required=True, nullable=True)
-    method = CharField(required=True, nullable=False)
-
-    @property
-    def is_admin(self):
-        return self.login == ADMIN_LOGIN
 
 
 def check_auth(request):
