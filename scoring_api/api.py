@@ -221,19 +221,29 @@ class OnlineScoreRequest(object):
         return {'score': score}, OK
 
 
-class MethodRequest(object):
+class MetaRequest(type):
+    def __new__(cls, clsname, bases, clsdict):
+        fields = [key for key, val in clsdict.items()
+                  if isinstance(val, AbstractField)]
+        for name in fields:
+            clsdict[name].name = name
+        return super().__new__(cls, clsname, bases, dict(clsdict))
+
+
+class Structure(metaclass=MetaRequest):
+    def __init__(self, *args):
+        attrs = args[0]
+        for attr in dir(self):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
+                setattr(self, attr, attrs.get(attr, None))
+
+
+class MethodRequest(Structure):
     account = CharField(required=False, nullable=True)
     login = CharField(required=True, nullable=True)
     token = CharField(required=True, nullable=True)
     arguments = ArgumentsField(required=True, nullable=True)
     method = CharField(required=True, nullable=False)
-
-    def __init__(self, account, login, token, arguments, method):
-        self.account = account
-        self.login = login
-        self.token = token
-        self.arguments = arguments
-        self.method = method
 
     @property
     def is_admin(self):
@@ -256,11 +266,7 @@ def method_handler(request, ctx, store):
 
     body = request['body']
     try:
-        request = MethodRequest(body.get('account', None),
-                                body['login'],
-                                body['token'],
-                                body['arguments'],
-                                body['method'])
+        request = MethodRequest(body)
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
