@@ -161,13 +161,9 @@ class Structure(metaclass=MetaRequest):
                 setattr(self, attr, attrs.get(attr, None))
 
 
-class ClientsInterestsRequest(object):
+class ClientsInterestsRequest(Structure):
     client_ids = ClientIDsField(required=True)
     date = DateField(required=False, nullable=True)
-
-    def __init__(self, client_ids, date):
-        self.client_ids = client_ids
-        self.date = date
 
     def validate(self):
         for attr in dir(self):
@@ -272,8 +268,7 @@ def method_handler(request, ctx, store):
             score_request = OnlineScoreRequest(args)
 
         elif request.method == 'clients_interests':
-            score_request = ClientsInterestsRequest(args.get('client_ids', None),
-                                                    args.get('date', None))
+            score_request = ClientsInterestsRequest(args)
         else:
             return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
