@@ -190,21 +190,13 @@ class ClientsInterestsRequest(object):
         return result, OK
 
 
-class OnlineScoreRequest(object):
+class OnlineScoreRequest(Structure):
     first_name = CharField(required=False, nullable=True)
     last_name = CharField(required=False, nullable=True)
     email = EmailField(required=False, nullable=True)
     phone = PhoneField(required=False, nullable=True)
     birthday = BirthDayField(required=False, nullable=True)
     gender = GenderField(required=False, nullable=True)
-
-    def __init__(self, first_name, last_name, email, phone, birthday, gender):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.phone = phone
-        self.birthday = birthday
-        self.gender = gender
 
     def validate(self):
         if (self.phone and self.email) \
@@ -277,12 +269,7 @@ def method_handler(request, ctx, store):
 
     try:
         if request.method == 'online_score':
-            score_request = OnlineScoreRequest(args.get('first_name', None),
-                                               args.get('last_name', None),
-                                               args.get('email', None),
-                                               args.get('phone', None),
-                                               args.get('birthday', None),
-                                               args.get('gender', None))
+            score_request = OnlineScoreRequest(args)
 
         elif request.method == 'clients_interests':
             score_request = ClientsInterestsRequest(args.get('client_ids', None),
