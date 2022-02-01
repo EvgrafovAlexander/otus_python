@@ -144,6 +144,23 @@ class ClientIDsField(AbstractField):
             raise ValidationError("Values in list must be int type")
 
 
+class MetaRequest(type):
+    def __new__(cls, clsname, bases, clsdict):
+        fields = [key for key, val in clsdict.items()
+                  if isinstance(val, AbstractField)]
+        for name in fields:
+            clsdict[name].name = name
+        return super().__new__(cls, clsname, bases, dict(clsdict))
+
+
+class Structure(metaclass=MetaRequest):
+    def __init__(self, *args):
+        attrs = args[0]
+        for attr in dir(self):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
+                setattr(self, attr, attrs.get(attr, None))
+
+
 class ClientsInterestsRequest(object):
     client_ids = ClientIDsField(required=True)
     date = DateField(required=False, nullable=True)
@@ -219,23 +236,6 @@ class OnlineScoreRequest(object):
 
         context['has'] = self.get_context()
         return {'score': score}, OK
-
-
-class MetaRequest(type):
-    def __new__(cls, clsname, bases, clsdict):
-        fields = [key for key, val in clsdict.items()
-                  if isinstance(val, AbstractField)]
-        for name in fields:
-            clsdict[name].name = name
-        return super().__new__(cls, clsname, bases, dict(clsdict))
-
-
-class Structure(metaclass=MetaRequest):
-    def __init__(self, *args):
-        attrs = args[0]
-        for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
-                setattr(self, attr, attrs.get(attr, None))
 
 
 class MethodRequest(Structure):
