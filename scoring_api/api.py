@@ -133,7 +133,7 @@ class ClientIDsField(AbstractField):
             raise ValidationError("Values in the list must be integers")
 
 
-class MetaRequest(type):
+class Meta(type):
     def __new__(cls, clsname, bases, clsdict):
         fields = [key for key, val in clsdict.items()
                   if isinstance(val, AbstractField)]
@@ -142,7 +142,7 @@ class MetaRequest(type):
         return super().__new__(cls, clsname, bases, dict(clsdict))
 
 
-class Structure(metaclass=MetaRequest):
+class Structure(metaclass=Meta):
     def __init__(self, *args):
         attrs = args[0]
         for attr in dir(self):
