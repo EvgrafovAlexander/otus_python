@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-
 import json
 import datetime
 import logging
 import hashlib
 import uuid
 from abc import ABC
-from collections import namedtuple
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -24,7 +21,6 @@ FORBIDDEN = 403
 NOT_FOUND = 404
 INVALID_REQUEST = 422
 INTERNAL_ERROR = 500
-INVALID_VALUE = -1
 ERRORS = {
     BAD_REQUEST: "Bad Request",
     FORBIDDEN: "Forbidden",
@@ -41,7 +37,9 @@ GENDERS = {
     FEMALE: "female",
 }
 
-ValidatedValue = namedtuple('ValidatedValue', 'value is_valid')
+
+class ValidationError(Exception):
+    pass
 
 
 class AbstractField(ABC):
@@ -55,130 +53,131 @@ class AbstractField(ABC):
 
     def __set__(self, instance, value):
         if value is None:
-            if self.required or not self.nullable:
-                self.value = ValidatedValue(value, False)
+            if self.required:
+                raise ValidationError("Required value not found")
+            elif not self.nullable:
+                raise ValidationError("Required value can't be zero")
             else:
-                self.value = ValidatedValue(value, True)
-        elif self.is_valid(value):
-            self.value = ValidatedValue(value, True)
+                self.value = value
         else:
-            self.value = ValidatedValue(value, False)
+            self.is_valid(value)
+            self.value = value
 
-    @staticmethod
-    def is_valid(value):
+    def is_valid(self, value):
         pass
 
 
 class CharField(AbstractField):
-    @staticmethod
-    def is_valid(value):
-        return isinstance(value, str)
+    def is_valid(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Value must be str type")
 
 
-class ArgumentsField(object):
-    def __init__(self, required, nullable):
-        self.required = required
-        self.required = nullable
+class ArgumentsField(AbstractField):
+    def is_valid(self, value):
+        if not isinstance(value, dict):
+            raise TypeError("Value must be dict type")
 
 
 class EmailField(CharField):
-    @staticmethod
-    def is_valid(value):
-        return isinstance(value, str) and '@' in value
+    def is_valid(self, value):
+        super().is_valid(value)
+        if '@' not in value:
+            raise ValidationError('Value must exist @.')
 
 
 class PhoneField(AbstractField):
-    @staticmethod
-    def is_valid(value):
-        if isinstance(value, str | int):
-            value = str(value)
-            return len(value) == 11 and value[0] == '7'
-        return False
+    def is_valid(self, value):
+        if not isinstance(value, str | int):
+            raise TypeError("Value must be str or int type")
+        value = str(value)
+        if len(value) != 11:
+            raise ValidationError("Length must be equal 11 symbols")
+        if value[0] != '7':
+            raise ValidationError("Thirst symbol must be 7")
 
 
 class DateField(AbstractField):
-    @staticmethod
-    def is_valid(value):
+    def is_valid(self, value):
         try:
-            return isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
+            isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
         except:
-            return False
+            raise ValueError("Value must be datetime format: DD.MM.YYYY")
 
 
 class BirthDayField(AbstractField):
-    @staticmethod
-    def is_valid(value):
+    def is_valid(self, value):
         try:
             value = datetime.datetime.strptime(value, "%d.%m.%Y")
-            return relativedelta(datetime.datetime.now(), value).years < 70
+            if not relativedelta(datetime.datetime.now(), value).years < 70:
+                raise ValidationError('Age must be < 70.')
         except:
-            return False
+            raise ValueError("Value must be datetime format: DD.MM.YYYY")
 
 
 class GenderField(AbstractField):
-    @staticmethod
-    def is_valid(value):
-        return isinstance(value, int) and value in (0, 1, 2)
+    def is_valid(self, value):
+        if not isinstance(value, int):
+            raise TypeError("Value must be int type")
+        if value not in (0, 1, 2):
+            raise ValueError("Value must be in 0, 1, 2")
 
 
-class ClientIDsField(object):
-    def __init__(self, required):
-        self.value = None
-        self.required = required
-
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if value is None and self.required:
-            self.value = ValidatedValue(value, False)
-        elif self.is_valid(value):
-            self.value = ValidatedValue(value, True)
-        else:
-            self.value = ValidatedValue(value, False)
-
-    @staticmethod
-    def is_valid(value):
-        if isinstance(value, list) and value and all(isinstance(x, int) for x in value):
-            return True
-        return False
+class ClientIDsField(AbstractField):
+    def is_valid(self, value):
+        if not isinstance(value, list):
+            raise TypeError("Value must be list type")
+        if not value:
+            raise ValueError("Value must not be empty")
+        if not all(isinstance(x, int) for x in value):
+            raise ValidationError("Values in the list must be integers")
 
 
-class ClientsInterestsRequest(object):
-    client_ids = ClientIDsField(required=True)
+class Structure:
+    def __init__(self, args):
+        for name in dir(self):
+            if not name.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
+                setattr(self, name, args.get(name, None))
+
+
+class MethodRequest(Structure):
+    account = CharField(required=False, nullable=True)
+    login = CharField(required=True, nullable=True)
+    token = CharField(required=True, nullable=True)
+    arguments = ArgumentsField(required=True, nullable=True)
+    method = CharField(required=True, nullable=False)
+
+    @property
+    def is_admin(self):
+        return self.login == ADMIN_LOGIN
+
+
+class ClientsInterestsRequest(Structure):
+    client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
-
-    def __init__(self, client_ids, date):
-        self.client_ids = client_ids
-        self.date = date
 
     def validate(self):
         for attr in dir(self):
-            if not (attr.startswith('_')
-                    or attr.startswith('validate')
-                    or attr.startswith('get_context')
-                    or attr.startswith('get_response')):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
                 attribute = getattr(self, attr)
                 if not attribute.is_valid:
                     return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
         return True, None
 
     def get_context(self):
-        context = len(self.client_ids.value) if self.client_ids.is_valid else 0
+        context = len(self.client_ids) if self.client_ids else 0
         return context
 
     def get_response(self, request, context, store):
         result = dict()
-        if not self.client_ids.is_valid:
-            return result
-        for client_id in self.client_ids.value:
+        for client_id in self.client_ids:
             interests = scoring.get_interests(None, None)
             result[client_id] = interests
         context['nclients'] = self.get_context()
         return result, OK
 
 
-class OnlineScoreRequest(object):
+class OnlineScoreRequest(Structure):
     first_name = CharField(required=False, nullable=True)
     last_name = CharField(required=False, nullable=True)
     email = EmailField(required=False, nullable=True)
@@ -186,27 +185,10 @@ class OnlineScoreRequest(object):
     birthday = BirthDayField(required=False, nullable=True)
     gender = GenderField(required=False, nullable=True)
 
-    def __init__(self, first_name, last_name, email, phone, birthday, gender):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.phone = phone
-        self.birthday = birthday
-        self.gender = gender
-
     def validate(self):
-        for attr in dir(self):
-            if not (attr.startswith('_')
-                    or attr.startswith('validate')
-                    or attr.startswith('get_context')
-                    or attr.startswith('get_response')):
-                attribute = getattr(self, attr)
-                if not attribute.is_valid:
-                    return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
-
-        if (self.phone.value and self.email.value) \
-                or (self.first_name.value and self.last_name.value) \
-                or (self.gender.value is not None and self.birthday.value):
+        if (self.phone and self.email) \
+                or (self.first_name and self.last_name) \
+                or (self.gender is not None and self.birthday):
             return True, None
         return False, {'error': 'Required field combinations not found: phone and email,'
                                 ' first name and last name, gender and birthday'}
@@ -214,12 +196,9 @@ class OnlineScoreRequest(object):
     def get_context(self):
         context = []
         for attr in dir(self):
-            if not (attr.startswith('_')
-                    or attr.startswith('validate')
-                    or attr.startswith('get_context')
-                    or attr.startswith('get_response')):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
                 attribute = getattr(self, attr)
-                if attribute.value is not None and attribute.is_valid:
+                if attribute is not None:
                     context.append(attr)
         return context
 
@@ -230,76 +209,44 @@ class OnlineScoreRequest(object):
             score = scoring.get_score(store, self.phone, self.email, self.birthday,
                                       self.gender, self.first_name, self.last_name)
 
+            is_valid, valid_info = self.validate()
+            if not is_valid:
+                return valid_info, INVALID_REQUEST
+
         context['has'] = self.get_context()
         return {'score': score}, OK
-
-
-class MethodRequest(object):
-    account = CharField(required=False, nullable=True)
-    login = CharField(required=True, nullable=True)
-    token = CharField(required=True, nullable=True)
-    arguments = ArgumentsField(required=True, nullable=True)
-    method = CharField(required=True, nullable=False)
-
-    def __init__(self, account, login, token, arguments, method):
-        self.account = account
-        self.login = login
-        self.token = token
-        self.arguments = arguments
-        self.method = method
-
-    @property
-    def is_admin(self):
-        return self.login.value == ADMIN_LOGIN
 
 
 def check_auth(request):
     if request.is_admin:
         digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
     else:
-        digest = hashlib.sha512((request.account.value + request.login.value + SALT).encode('utf-8')).hexdigest()
-    if digest == request.token.value:
+        digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
+    if digest == request.token:
         return True
     return False
 
 
 def method_handler(request, ctx, store):
     if not (request['body'] or request['headers']):
+        return None, INVALID_REQUEST
+
+    try:
+        request = MethodRequest(request['body'])
+
+        if not check_auth(request):
+            return ERRORS[FORBIDDEN], FORBIDDEN
+
+        args = request.arguments
+
+        if request.method == 'online_score':
+            score_request = OnlineScoreRequest(args)
+        elif request.method == 'clients_interests':
+            score_request = ClientsInterestsRequest(args)
+        else:
+            return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+    except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
-    if not request['body'].keys() >= {'login', 'method', 'token', 'arguments'}:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
-    body = request['body']
-    request = MethodRequest(body.get('account', None),
-                            body['login'],
-                            body['token'],
-                            body['arguments'],
-                            body['method'])
-
-    if not check_auth(request):
-        return ERRORS[FORBIDDEN], FORBIDDEN
-
-    args = request.arguments
-
-    if request.method.value == 'online_score':
-        score_request = OnlineScoreRequest(args.get('first_name', None),
-                                           args.get('last_name', None),
-                                           args.get('email', None),
-                                           args.get('phone', None),
-                                           args.get('birthday', None),
-                                           args.get('gender', None))
-
-    elif request.method.value == 'clients_interests':
-        score_request = ClientsInterestsRequest(args.get('client_ids', None),
-                                                args.get('date', None))
-    else:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
-    is_valid, valid_info = score_request.validate()
-
-    if not is_valid:
-        return valid_info, INVALID_REQUEST
 
     return score_request.get_response(request, ctx, store)
 
