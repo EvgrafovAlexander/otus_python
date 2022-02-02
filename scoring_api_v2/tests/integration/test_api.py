@@ -3,11 +3,12 @@ import hashlib
 import datetime
 
 import api
+from store import Store
 
 
 context = {}
 headers = {}
-store = None
+store = Store()
 
 test_bad_auth_data = [
     ({"account": "horns&hoofs", "login": "h&f", "method": "online_score", "token": "", "arguments": {}}),
