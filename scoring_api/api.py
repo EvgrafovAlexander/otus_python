@@ -38,10 +38,12 @@ GENDERS = {
 }
 
 
+# --- Exceptions ---
 class ValidationError(Exception):
     pass
 
 
+# --- Fields ---
 class AbstractField(ABC):
     def __init__(self, required, nullable):
         self.value = None
@@ -133,6 +135,7 @@ class ClientIDsField(AbstractField):
             raise ValidationError("Values in the list must be integers")
 
 
+# --- Requests ---
 class Meta(type):
     def __new__(mcs, name, bases, attrs):
         field_list = []
@@ -175,18 +178,6 @@ class ClientsInterestsRequest(Base):
                 return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
         return True, None
 
-    def get_context(self):
-        context = len(self.client_ids) if self.client_ids else 0
-        return context
-
-    def get_response(self, request, context, store):
-        result = dict()
-        for client_id in self.client_ids:
-            interests = scoring.get_interests(None, None)
-            result[client_id] = interests
-        context['nclients'] = self.get_context()
-        return result, OK
-
 
 class OnlineScoreRequest(Base):
     first_name = CharField(required=False, nullable=True)
@@ -204,33 +195,16 @@ class OnlineScoreRequest(Base):
         return False, {'error': 'Required field combinations not found: phone and email,'
                                 ' first name and last name, gender and birthday'}
 
-    def get_context(self):
-        context = []
-        for attr in self.fields:
-            attribute = getattr(self, attr.name)
-            if attribute is not None:
-                context.append(attr.name)
-        return context
-
-    def get_response(self, request, context, store):
-        if request.is_admin:
-            score = 42
-        else:
-            score = scoring.get_score(store, self.phone, self.email, self.birthday,
-                                      self.gender, self.first_name, self.last_name)
-
-            is_valid, valid_info = self.validate()
-            if not is_valid:
-                return valid_info, INVALID_REQUEST
-
-        context['has'] = self.get_context()
-        return {'score': score}, OK
-
 
 # --- Request Handlers ---
 class RequestHandler(ABC):
     @abstractmethod
     def get_response(self, data, request, context, store):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_context(data):
         pass
 
 
@@ -249,7 +223,8 @@ class OnlineScoreRequestHandler(RequestHandler):
         context['has'] = self.get_context(data)
         return {'score': score}, OK
 
-    def get_context(self, data):
+    @staticmethod
+    def get_context(data):
         context = []
         for attr in data.fields:
             attribute = getattr(data, attr.name)
@@ -267,7 +242,8 @@ class ClientsInterestsRequestHandler(RequestHandler):
         context['nclients'] = self.get_context(data)
         return result, OK
 
-    def get_context(self, data):
+    @staticmethod
+    def get_context(data):
         context = len(data.client_ids) if data.client_ids else 0
         return context
 
@@ -295,15 +271,17 @@ def method_handler(request, ctx, store):
         args = request.arguments
 
         if request.method == 'online_score':
-            score_request = OnlineScoreRequest(args)
+            data = OnlineScoreRequest(args)
+            handler = OnlineScoreRequestHandler
         elif request.method == 'clients_interests':
-            score_request = ClientsInterestsRequest(args)
+            data = ClientsInterestsRequest(args)
+            handler = ClientsInterestsRequestHandler
         else:
             return ERRORS[INVALID_REQUEST], INVALID_REQUEST
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    return score_request.get_response(request, ctx, store)
+    return handler().get_response(data, request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
