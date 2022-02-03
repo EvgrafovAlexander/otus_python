@@ -133,14 +133,26 @@ class ClientIDsField(AbstractField):
             raise ValidationError("Values in the list must be integers")
 
 
-class Structure:
+class Meta(type):
+    def __new__(mcs, name, bases, attrs):
+        field_list = []
+        for k, v in attrs.items():
+            if isinstance(v, AbstractField):
+                v.name = k
+                field_list.append(v)
+
+        cls = super(Meta, mcs).__new__(mcs, name, bases, attrs)
+        cls.fields = field_list
+        return cls
+
+
+class Base(metaclass=Meta):
     def __init__(self, args):
-        for name in dir(self):
-            if not name.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
-                setattr(self, name, args.get(name, None))
+        for v in self.fields:
+            setattr(self, v.name, args.get(v.name, None))
 
 
-class MethodRequest(Structure):
+class MethodRequest(Base):
     account = CharField(required=False, nullable=True)
     login = CharField(required=True, nullable=True)
     token = CharField(required=True, nullable=True)
@@ -152,7 +164,7 @@ class MethodRequest(Structure):
         return self.login == ADMIN_LOGIN
 
 
-class ClientsInterestsRequest(Structure):
+class ClientsInterestsRequest(Base):
     client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
 
@@ -177,7 +189,7 @@ class ClientsInterestsRequest(Structure):
         return result, OK
 
 
-class OnlineScoreRequest(Structure):
+class OnlineScoreRequest(Base):
     first_name = CharField(required=False, nullable=True)
     last_name = CharField(required=False, nullable=True)
     email = EmailField(required=False, nullable=True)
@@ -196,7 +208,7 @@ class OnlineScoreRequest(Structure):
     def get_context(self):
         context = []
         for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
+            if not attr.startswith(('_', 'validate', 'get_context', 'get_response', 'fields')):
                 attribute = getattr(self, attr)
                 if attribute is not None:
                     context.append(attr)
