@@ -169,12 +169,12 @@ class ClientsInterestsRequest(Base):
     date = DateField(required=False, nullable=True)
 
     def validate(self):
-        for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
-                attribute = getattr(self, attr)
-                if not attribute.is_valid:
-                    return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
+        for attr in self.fields:
+            attribute = getattr(self, attr.name)
+            if not attribute.is_valid:
+                return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
         return True, None
+
 
     def get_context(self):
         context = len(self.client_ids) if self.client_ids else 0
@@ -207,11 +207,10 @@ class OnlineScoreRequest(Base):
 
     def get_context(self):
         context = []
-        for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response', 'fields')):
-                attribute = getattr(self, attr)
-                if attribute is not None:
-                    context.append(attr)
+        for attr in self.fields:
+            attribute = getattr(self, attr.name)
+            if attribute is not None:
+                context.append(attr.name)
         return context
 
     def get_response(self, request, context, store):
