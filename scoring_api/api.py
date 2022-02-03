@@ -259,25 +259,27 @@ def check_auth(request):
 
 
 def method_handler(request, ctx, store):
+    requests = {
+        'online_score': {
+            'method': OnlineScoreRequest,
+            'handler': OnlineScoreRequestHandler
+        },
+        'clients_interests': {
+            'method': ClientsInterestsRequest,
+            'handler': ClientsInterestsRequestHandler
+        },
+    }
+
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
-
     try:
         request = MethodRequest(request['body'])
-
         if not check_auth(request):
             return ERRORS[FORBIDDEN], FORBIDDEN
 
         args = request.arguments
-
-        if request.method == 'online_score':
-            data = OnlineScoreRequest(args)
-            handler = OnlineScoreRequestHandler
-        elif request.method == 'clients_interests':
-            data = ClientsInterestsRequest(args)
-            handler = ClientsInterestsRequestHandler
-        else:
-            return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+        data = requests[request.method]['method'](args)
+        handler = requests[request.method]['handler']
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
