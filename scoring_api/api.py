@@ -70,13 +70,13 @@ class AbstractField(ABC):
 class CharField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, str):
-            raise TypeError("Value must be str type")
+            raise ValidationError("Value must be str type")
 
 
 class ArgumentsField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, dict):
-            raise TypeError("Value must be dict type")
+            raise ValidationError("Value must be dict type")
 
 
 class EmailField(CharField):
@@ -102,7 +102,7 @@ class DateField(AbstractField):
         try:
             isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
         except:
-            raise ValueError("Value must be datetime format: DD.MM.YYYY")
+            raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
 class BirthDayField(AbstractField):
@@ -112,13 +112,13 @@ class BirthDayField(AbstractField):
             if not relativedelta(datetime.datetime.now(), value).years < 70:
                 raise ValidationError('Age must be < 70.')
         except:
-            raise ValueError("Value must be datetime format: DD.MM.YYYY")
+            raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
 class GenderField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, int):
-            raise TypeError("Value must be int type")
+            raise ValidationError("Value must be int type")
         if value not in (0, 1, 2):
             raise ValidationError("Value must be in 0, 1, 2")
 
@@ -126,9 +126,9 @@ class GenderField(AbstractField):
 class ClientIDsField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, list):
-            raise TypeError("Value must be list type")
+            raise ValidationError("Value must be list type")
         if not value:
-            raise ValueError("Value must not be empty")
+            raise ValidationError("Value must not be empty")
         if not all(isinstance(x, int) for x in value):
             raise ValidationError("Values in the list must be integers")
 
