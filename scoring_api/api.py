@@ -5,7 +5,7 @@ import datetime
 import logging
 import hashlib
 import uuid
-from abc import ABC
+from abc import ABC, abstractmethod
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -175,7 +175,6 @@ class ClientsInterestsRequest(Base):
                 return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
         return True, None
 
-
     def get_context(self):
         context = len(self.client_ids) if self.client_ids else 0
         return context
@@ -226,6 +225,51 @@ class OnlineScoreRequest(Base):
 
         context['has'] = self.get_context()
         return {'score': score}, OK
+
+
+# --- Request Handlers ---
+class RequestHandler(ABC):
+    @abstractmethod
+    def get_response(self, data, request, context, store):
+        pass
+
+
+class OnlineScoreRequestHandler(RequestHandler):
+    def get_response(self, data, request, context, store):
+        if request.is_admin:
+            score = 42
+        else:
+            score = scoring.get_score(store, data.phone, data.email, data.birthday,
+                                      data.gender, data.first_name, data.last_name)
+
+            is_valid, valid_info = data.validate()
+            if not is_valid:
+                return valid_info, INVALID_REQUEST
+
+        context['has'] = self.get_context(data)
+        return {'score': score}, OK
+
+    def get_context(self, data):
+        context = []
+        for attr in data.fields:
+            attribute = getattr(data, attr.name)
+            if attribute is not None:
+                context.append(attr.name)
+        return context
+
+
+class ClientsInterestsRequestHandler(RequestHandler):
+    def get_response(self, data, request, context, store):
+        result = dict()
+        for client_id in data.client_ids:
+            interests = scoring.get_interests(None, None)
+            result[client_id] = interests
+        context['nclients'] = self.get_context(data)
+        return result, OK
+
+    def get_context(self, data):
+        context = len(data.client_ids) if data.client_ids else 0
+        return context
 
 
 def check_auth(request):
