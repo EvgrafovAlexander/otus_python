@@ -5,7 +5,7 @@ import datetime
 import logging
 import hashlib
 import uuid
-from abc import ABC
+from abc import ABC, abstractmethod
 from dateutil.relativedelta import relativedelta
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -38,10 +38,12 @@ GENDERS = {
 }
 
 
+# --- Exceptions ---
 class ValidationError(Exception):
     pass
 
 
+# --- Fields ---
 class AbstractField(ABC):
     def __init__(self, required, nullable):
         self.value = None
@@ -70,13 +72,13 @@ class AbstractField(ABC):
 class CharField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, str):
-            raise TypeError("Value must be str type")
+            raise ValidationError("Value must be str type")
 
 
 class ArgumentsField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, dict):
-            raise TypeError("Value must be dict type")
+            raise ValidationError("Value must be dict type")
 
 
 class EmailField(CharField):
@@ -102,7 +104,7 @@ class DateField(AbstractField):
         try:
             isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
         except:
-            raise ValueError("Value must be datetime format: DD.MM.YYYY")
+            raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
 class BirthDayField(AbstractField):
@@ -112,13 +114,13 @@ class BirthDayField(AbstractField):
             if not relativedelta(datetime.datetime.now(), value).years < 70:
                 raise ValidationError('Age must be < 70.')
         except:
-            raise ValueError("Value must be datetime format: DD.MM.YYYY")
+            raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
 class GenderField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, int):
-            raise TypeError("Value must be int type")
+            raise ValidationError("Value must be int type")
         if value not in (0, 1, 2):
             raise ValidationError("Value must be in 0, 1, 2")
 
@@ -126,21 +128,34 @@ class GenderField(AbstractField):
 class ClientIDsField(AbstractField):
     def is_valid(self, value):
         if not isinstance(value, list):
-            raise TypeError("Value must be list type")
+            raise ValidationError("Value must be list type")
         if not value:
-            raise ValueError("Value must not be empty")
+            raise ValidationError("Value must not be empty")
         if not all(isinstance(x, int) for x in value):
             raise ValidationError("Values in the list must be integers")
 
 
-class Structure:
+# --- Requests ---
+class Meta(type):
+    def __new__(mcs, name, bases, attrs):
+        field_list = []
+        for k, v in attrs.items():
+            if isinstance(v, AbstractField):
+                v.name = k
+                field_list.append(v)
+
+        cls = super(Meta, mcs).__new__(mcs, name, bases, attrs)
+        cls.fields = field_list
+        return cls
+
+
+class Base(metaclass=Meta):
     def __init__(self, args):
-        for name in dir(self):
-            if not name.startswith(('_', 'validate', 'get_context', 'get_response', 'is_admin')):
-                setattr(self, name, args.get(name, None))
+        for v in self.fields:
+            setattr(self, v.name, args.get(v.name, None))
 
 
-class MethodRequest(Structure):
+class MethodRequest(Base):
     account = CharField(required=False, nullable=True)
     login = CharField(required=True, nullable=True)
     token = CharField(required=True, nullable=True)
@@ -152,32 +167,19 @@ class MethodRequest(Structure):
         return self.login == ADMIN_LOGIN
 
 
-class ClientsInterestsRequest(Structure):
+class ClientsInterestsRequest(Base):
     client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
 
     def validate(self):
-        for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
-                attribute = getattr(self, attr)
-                if not attribute.is_valid:
-                    return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
+        for attr in self.fields:
+            attribute = getattr(self, attr.name)
+            if not attribute.is_valid:
+                return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
         return True, None
 
-    def get_context(self):
-        context = len(self.client_ids) if self.client_ids else 0
-        return context
 
-    def get_response(self, request, context, store):
-        result = dict()
-        for client_id in self.client_ids:
-            interests = scoring.get_interests(None, None)
-            result[client_id] = interests
-        context['nclients'] = self.get_context()
-        return result, OK
-
-
-class OnlineScoreRequest(Structure):
+class OnlineScoreRequest(Base):
     first_name = CharField(required=False, nullable=True)
     last_name = CharField(required=False, nullable=True)
     email = EmailField(required=False, nullable=True)
@@ -193,28 +195,57 @@ class OnlineScoreRequest(Structure):
         return False, {'error': 'Required field combinations not found: phone and email,'
                                 ' first name and last name, gender and birthday'}
 
-    def get_context(self):
-        context = []
-        for attr in dir(self):
-            if not attr.startswith(('_', 'validate', 'get_context', 'get_response')):
-                attribute = getattr(self, attr)
-                if attribute is not None:
-                    context.append(attr)
-        return context
 
-    def get_response(self, request, context, store):
+# --- Request Handlers ---
+class RequestHandler(ABC):
+    @abstractmethod
+    def get_response(self, data, request, context, store):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_context(data):
+        pass
+
+
+class OnlineScoreRequestHandler(RequestHandler):
+    def get_response(self, data, request, context, store):
         if request.is_admin:
             score = 42
         else:
-            score = scoring.get_score(store, self.phone, self.email, self.birthday,
-                                      self.gender, self.first_name, self.last_name)
+            score = scoring.get_score(store, data.phone, data.email, data.birthday,
+                                      data.gender, data.first_name, data.last_name)
 
-            is_valid, valid_info = self.validate()
+            is_valid, valid_info = data.validate()
             if not is_valid:
                 return valid_info, INVALID_REQUEST
 
-        context['has'] = self.get_context()
+        context['has'] = self.get_context(data)
         return {'score': score}, OK
+
+    @staticmethod
+    def get_context(data):
+        context = []
+        for attr in data.fields:
+            attribute = getattr(data, attr.name)
+            if attribute is not None:
+                context.append(attr.name)
+        return context
+
+
+class ClientsInterestsRequestHandler(RequestHandler):
+    def get_response(self, data, request, context, store):
+        result = dict()
+        for client_id in data.client_ids:
+            interests = scoring.get_interests(None, None)
+            result[client_id] = interests
+        context['nclients'] = self.get_context(data)
+        return result, OK
+
+    @staticmethod
+    def get_context(data):
+        context = len(data.client_ids) if data.client_ids else 0
+        return context
 
 
 def check_auth(request):
@@ -228,27 +259,31 @@ def check_auth(request):
 
 
 def method_handler(request, ctx, store):
+    requests = {
+        'online_score': {
+            'method': OnlineScoreRequest,
+            'handler': OnlineScoreRequestHandler
+        },
+        'clients_interests': {
+            'method': ClientsInterestsRequest,
+            'handler': ClientsInterestsRequestHandler
+        },
+    }
+
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
-
     try:
         request = MethodRequest(request['body'])
-
         if not check_auth(request):
             return ERRORS[FORBIDDEN], FORBIDDEN
 
         args = request.arguments
-
-        if request.method == 'online_score':
-            score_request = OnlineScoreRequest(args)
-        elif request.method == 'clients_interests':
-            score_request = ClientsInterestsRequest(args)
-        else:
-            return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+        data = requests[request.method]['method'](args)
+        handler = requests[request.method]['handler']
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
 
-    return score_request.get_response(request, ctx, store)
+    return handler().get_response(data, request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
