@@ -53,6 +53,15 @@ test_ok_score_admin_arguments_data = [
     ({"phone": "79175002040", "email": "stupnikov@otus.ru"}),
 ]
 
+test_invalid_interests_arguments_data = [
+    ({}),
+    ({"date": "20.07.2017"}),
+    ({"client_ids": [], "date": "20.07.2017"}),
+    ({"client_ids": {1: 2}, "date": "20.07.2017"}),
+    ({"client_ids": ["1", "2"], "date": "20.07.2017"}),
+    ({"client_ids": [1, 2], "date": "XXX"}),
+]
+
 
 def set_valid_auth(request):
     if request.get("login") == api.ADMIN_LOGIN:
@@ -112,6 +121,15 @@ def test_ok_score_admin_request(arguments_data):
     assert api.OK == code
     assert score == 42
     assert sorted(context["has"]) == sorted(arguments_data.keys())
+
+
+@pytest.mark.parametrize("arguments_data", test_invalid_interests_arguments_data)
+def test_invalid_interests_request(arguments_data):
+    request = {"account": "horns&hoofs", "login": "h&f", "method": "clients_interests", "arguments": arguments_data}
+    set_valid_auth(request)
+    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
+    assert api.INVALID_REQUEST == code
+    assert len(response)
 
 
 if __name__ == "__main__":
