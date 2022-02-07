@@ -49,6 +49,10 @@ test_ok_score_arguments_data = [
       "first_name": "a", "last_name": "b"})
 ]
 
+test_ok_score_admin_arguments_data = [
+    ({"phone": "79175002040", "email": "stupnikov@otus.ru"}),
+]
+
 
 def set_valid_auth(request):
     if request.get("login") == api.ADMIN_LOGIN:
@@ -96,6 +100,17 @@ def test_ok_score_request(arguments_data):
     score = response.get("score")
     assert api.OK == code
     assert isinstance(score, (int, float)) and score >= 0
+    assert sorted(context["has"]) == sorted(arguments_data.keys())
+
+
+@pytest.mark.parametrize("arguments_data", test_ok_score_admin_arguments_data)
+def test_ok_score_admin_request(arguments_data):
+    request = {"account": "horns&hoofs", "login": "admin", "method": "online_score", "arguments": arguments_data}
+    set_valid_auth(request)
+    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
+    score = response.get("score")
+    assert api.OK == code
+    assert score == 42
     assert sorted(context["has"]) == sorted(arguments_data.keys())
 
 
