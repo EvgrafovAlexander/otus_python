@@ -7,7 +7,7 @@ def get_score(store, phone, email, birthday=None, gender=None, first_name=None, 
         first_name or "",
         last_name or "",
         phone or "",
-        birthday.strftime("%Y%m%d") if birthday is not None else "",
+        birthday or "",
     ]
     key = "uid:" + hashlib.md5("".join(key_parts).encode()).hexdigest()
     # try get from cache,

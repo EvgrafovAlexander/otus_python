@@ -1,4 +1,5 @@
 import redis
+import json
 
 
 class Store:
@@ -6,7 +7,10 @@ class Store:
         self._store = redis.Redis(host=host, port=port, db=db)
 
     def cache_get(self, key):
-        return self._store.get(key)
+        val = self._store.get(key)
+        if val:
+            return json.loads(val)
+        return None
 
     def cache_set(self, key, value, storage_time):
-        self._store.set(key, value, ex=storage_time)
+        self._store.set(key, json.dumps(value), ex=storage_time)
