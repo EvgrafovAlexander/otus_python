@@ -24,7 +24,7 @@ class TestCharField:
         assert self.field == 'text'
 
     def test_incorrect_type(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             self.field = 1
 
 
@@ -36,7 +36,7 @@ class TestArgumentsField:
         assert self.field == {}
 
     def test_incorrect_type(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             self.field = 'invalid_type'
 
 
@@ -68,7 +68,7 @@ class TestPhoneField:
             self.field = '7923223'
 
     def test_incorrect_type(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             self.field = 2.5
 
 
@@ -80,7 +80,7 @@ class TestDateField:
         assert self.field == '21.01.1970'
 
     def test_incorrect_value(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             self.field = '21011970'
 
 
@@ -92,11 +92,11 @@ class TestBirthDayField:
         assert self.field == '21.01.1970'
 
     def test_incorrect_value(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             self.field = '21011970'
 
     def test_incorrect_age(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             self.field = '21.01.1800'
 
 
@@ -108,11 +108,11 @@ class TestGenderField:
         assert self.field == 0
 
     def test_incorrect_type(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             self.field = '1'
 
     def test_incorrect_value(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             self.field = 3
 
 
@@ -124,11 +124,11 @@ class TestClientIDsField:
         assert self.field == [1, 2, 3, 4]
 
     def test_incorrect_type(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             self.field = '1'
 
     def test_empty_list(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             self.field = []
 
     def test_incorrect_value(self):
