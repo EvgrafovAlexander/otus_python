@@ -6,7 +6,7 @@ def get_score(store, phone, email, birthday=None, gender=None, first_name=None, 
     key_parts = [
         first_name or "",
         last_name or "",
-        phone or "",
+        str(phone) or "",
         birthday or "",
     ]
     key = "uid:" + hashlib.md5("".join(key_parts).encode()).hexdigest()

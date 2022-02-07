@@ -96,7 +96,7 @@ def test_ok_score_request(arguments_data):
     score = response.get("score")
     assert api.OK == code
     assert isinstance(score, (int, float)) and score >= 0
-    assert context["has"] == sorted(arguments_data.keys())
+    assert sorted(context["has"]) == sorted(arguments_data.keys())
 
 
 if __name__ == "__main__":
