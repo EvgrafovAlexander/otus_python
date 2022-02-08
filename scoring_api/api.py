@@ -46,50 +46,35 @@ class ValidationError(Exception):
 # --- Fields ---
 class AbstractField(ABC):
     def __init__(self, required, nullable):
-        self.value = None
         self.required = required
         self.nullable = nullable
 
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if value is None:
-            if self.required:
-                raise ValidationError("Required value not found")
-            elif not self.nullable:
-                raise ValidationError("Required value can't be zero")
-            else:
-                self.value = value
-        else:
-            self.is_valid(value)
-            self.value = value
-
-    def is_valid(self, value):
+    @abstractmethod
+    def validate(self, value):
         pass
 
 
 class CharField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, str):
             raise ValidationError("Value must be str type")
 
 
 class ArgumentsField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, dict):
             raise ValidationError("Value must be dict type")
 
 
 class EmailField(CharField):
-    def is_valid(self, value):
-        super().is_valid(value)
+    def validate(self, value):
+        super().validate(value)
         if '@' not in value:
             raise ValidationError('Value must exist @.')
 
 
 class PhoneField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, str | int):
             raise TypeError("Value must be str or int type")
         value = str(value)
@@ -100,7 +85,7 @@ class PhoneField(AbstractField):
 
 
 class DateField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         try:
             isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
         except:
@@ -108,7 +93,7 @@ class DateField(AbstractField):
 
 
 class BirthDayField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         try:
             value = datetime.datetime.strptime(value, "%d.%m.%Y")
             if not relativedelta(datetime.datetime.now(), value).years < 70:
@@ -118,7 +103,7 @@ class BirthDayField(AbstractField):
 
 
 class GenderField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, int):
             raise ValidationError("Value must be int type")
         if value not in (0, 1, 2):
@@ -126,7 +111,7 @@ class GenderField(AbstractField):
 
 
 class ClientIDsField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, list):
             raise ValidationError("Value must be list type")
         if not value:
@@ -151,8 +136,32 @@ class Meta(type):
 
 class Base(metaclass=Meta):
     def __init__(self, args):
-        for v in self.fields:
-            setattr(self, v.name, args.get(v.name, None))
+        self.args = args
+        self.errors = {}
+
+    def validate(self):
+        for field in self.fields:
+            name = field.name
+            value = self.args.get(name)
+            setattr(self, name, value)
+
+            if value is None:
+                if field.required:
+                    self.errors[name] = "Required value not found"
+                elif not field.nullable:
+                    self.errors[name] = "Required value can't be zero"
+            else:
+                try:
+                    field.validate(value)
+                except Exception as e:
+                    self.errors[name] = str(e)
+
+    def is_valid(self):
+        self.validate()
+        return False if self.errors else True
+
+    def get_found_errors(self):
+        return str(self.errors)
 
 
 class MethodRequest(Base):
@@ -171,13 +180,6 @@ class ClientsInterestsRequest(Base):
     client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
 
-    def validate(self):
-        for attr in self.fields:
-            attribute = getattr(self, attr.name)
-            if not attribute.is_valid:
-                return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
-        return True, None
-
 
 class OnlineScoreRequest(Base):
     first_name = CharField(required=False, nullable=True)
@@ -188,12 +190,13 @@ class OnlineScoreRequest(Base):
     gender = GenderField(required=False, nullable=True)
 
     def validate(self):
+        super().validate()
         if (self.phone and self.email) \
                 or (self.first_name and self.last_name) \
                 or (self.gender is not None and self.birthday):
-            return True, None
-        return False, {'error': 'Required field combinations not found: phone and email,'
-                                ' first name and last name, gender and birthday'}
+            return
+        self.errors['Combinations Error'] = 'Required field combinations not found: phone and email,' \
+                                            ' first name and last name, gender and birthday'
 
 
 # --- Request Handlers ---
@@ -210,15 +213,14 @@ class RequestHandler(ABC):
 
 class OnlineScoreRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
+        if not data.is_valid():
+            return data.get_found_errors(), INVALID_REQUEST
+
         if request.is_admin:
             score = 42
         else:
             score = scoring.get_score(store, data.phone, data.email, data.birthday,
                                       data.gender, data.first_name, data.last_name)
-
-            is_valid, valid_info = data.validate()
-            if not is_valid:
-                return valid_info, INVALID_REQUEST
 
         context['has'] = self.get_context(data)
         return {'score': score}, OK
@@ -235,6 +237,9 @@ class OnlineScoreRequestHandler(RequestHandler):
 
 class ClientsInterestsRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
+        if not data.is_valid():
+            return data.get_found_errors(), INVALID_REQUEST
+
         result = dict()
         for client_id in data.client_ids:
             interests = scoring.get_interests(None, None)
@@ -272,16 +277,15 @@ def method_handler(request, ctx, store):
 
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
-    try:
-        request = MethodRequest(request['body'])
-        if not check_auth(request):
-            return ERRORS[FORBIDDEN], FORBIDDEN
 
-        args = request.arguments
-        data = requests[request.method]['method'](args)
-        handler = requests[request.method]['handler']
-    except Exception:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+    request = MethodRequest(request['body'])
+    if not request.is_valid():
+        return request.get_found_errors(), INVALID_REQUEST
+    if not check_auth(request):
+        return ERRORS[FORBIDDEN], FORBIDDEN
+
+    data = requests[request.method]['method'](request.arguments)
+    handler = requests[request.method]['handler']
 
     return handler().get_response(data, request, ctx, store)
 
