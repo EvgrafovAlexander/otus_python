@@ -275,14 +275,15 @@ def method_handler(request, ctx, store):
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
     request = MethodRequest(request['body'])
-    request.validate()
+    if not request.is_valid():
+        return str(request.errors), INVALID_REQUEST
+    if not check_auth(request):
+        return ERRORS[FORBIDDEN], FORBIDDEN
+    args = request.arguments
+    data = requests[request.method]['method'](args)
+    handler = requests[request.method]['handler']
+    
     try:
-        if not check_auth(request):
-            return ERRORS[FORBIDDEN], FORBIDDEN
-
-        args = request.arguments
-        data = requests[request.method]['method'](args)
-        handler = requests[request.method]['handler']
         return handler().get_response(data, request, ctx, store)
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
