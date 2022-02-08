@@ -46,25 +46,10 @@ class ValidationError(Exception):
 # --- Fields ---
 class AbstractField(ABC):
     def __init__(self, required, nullable):
-        self.value = None
         self.required = required
         self.nullable = nullable
 
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __set__(self, instance, value):
-        if value is None:
-            if self.required:
-                raise ValidationError("Required value not found")
-            elif not self.nullable:
-                raise ValidationError("Required value can't be zero")
-            else:
-                self.value = value
-        else:
-            self.validate(value)
-            self.value = value
-
+    @abstractmethod
     def validate(self, value):
         pass
 
@@ -151,8 +136,21 @@ class Meta(type):
 
 class Base(metaclass=Meta):
     def __init__(self, args):
-        for v in self.fields:
-            setattr(self, v.name, args.get(v.name, None))
+        self.args = args
+
+    def validate(self):
+        for field in self.fields:
+            name = field.name
+            value = self.args.get(name)
+            setattr(self, name, value)
+
+            if value is None:
+                if field.required:
+                    raise ValidationError("Required value not found")
+                elif not field.nullable:
+                    raise ValidationError("Required value can't be zero")
+            else:
+                field.validate(value)
 
 
 class MethodRequest(Base):
@@ -172,10 +170,11 @@ class ClientsInterestsRequest(Base):
     date = DateField(required=False, nullable=True)
 
     def validate(self):
+        super().validate()
         for attr in self.fields:
             attribute = getattr(self, attr.name)
-            if not attribute.is_valid:
-                return False, {'error': f'Incorrected value {attribute.value} if field {attr}'}
+            if attribute is None:
+                return False, {'error': f'Incorrected value {attribute} if field {attr}'}
         return True, None
 
 
@@ -188,6 +187,7 @@ class OnlineScoreRequest(Base):
     gender = GenderField(required=False, nullable=True)
 
     def validate(self):
+        super().validate()
         if (self.phone and self.email) \
                 or (self.first_name and self.last_name) \
                 or (self.gender is not None and self.birthday):
@@ -235,6 +235,7 @@ class OnlineScoreRequestHandler(RequestHandler):
 
 class ClientsInterestsRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
+        data.validate()
         result = dict()
         for client_id in data.client_ids:
             interests = scoring.get_interests(None, None)
@@ -274,16 +275,16 @@ def method_handler(request, ctx, store):
         return None, INVALID_REQUEST
     try:
         request = MethodRequest(request['body'])
+        request.validate()
         if not check_auth(request):
             return ERRORS[FORBIDDEN], FORBIDDEN
 
         args = request.arguments
         data = requests[request.method]['method'](args)
         handler = requests[request.method]['handler']
+        return handler().get_response(data, request, ctx, store)
     except Exception:
         return ERRORS[INVALID_REQUEST], INVALID_REQUEST
-
-    return handler().get_response(data, request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
