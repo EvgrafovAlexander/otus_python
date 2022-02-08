@@ -239,7 +239,7 @@ class ClientsInterestsRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
         result = dict()
         for client_id in data.client_ids:
-            interests = scoring.get_interests(None, None)
+            interests = scoring.get_interests(store, client_id)
             result[client_id] = interests
         context['nclients'] = self.get_context(data)
         return result, OK

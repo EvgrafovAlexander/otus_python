@@ -14,3 +14,7 @@ class Store:
 
     def cache_set(self, key, value, storage_time):
         self._store.set(key, json.dumps(value), ex=storage_time)
+
+    # TODO: Доработать метод
+    def get(self):
+        pass
