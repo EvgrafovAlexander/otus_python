@@ -62,34 +62,34 @@ class AbstractField(ABC):
             else:
                 self.value = value
         else:
-            self.is_valid(value)
+            self.validate(value)
             self.value = value
 
-    def is_valid(self, value):
+    def validate(self, value):
         pass
 
 
 class CharField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, str):
             raise ValidationError("Value must be str type")
 
 
 class ArgumentsField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, dict):
             raise ValidationError("Value must be dict type")
 
 
 class EmailField(CharField):
-    def is_valid(self, value):
-        super().is_valid(value)
+    def validate(self, value):
+        super().validate(value)
         if '@' not in value:
             raise ValidationError('Value must exist @.')
 
 
 class PhoneField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, str | int):
             raise TypeError("Value must be str or int type")
         value = str(value)
@@ -100,7 +100,7 @@ class PhoneField(AbstractField):
 
 
 class DateField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         try:
             isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
         except:
@@ -108,7 +108,7 @@ class DateField(AbstractField):
 
 
 class BirthDayField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         try:
             value = datetime.datetime.strptime(value, "%d.%m.%Y")
             if not relativedelta(datetime.datetime.now(), value).years < 70:
@@ -118,7 +118,7 @@ class BirthDayField(AbstractField):
 
 
 class GenderField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, int):
             raise ValidationError("Value must be int type")
         if value not in (0, 1, 2):
@@ -126,7 +126,7 @@ class GenderField(AbstractField):
 
 
 class ClientIDsField(AbstractField):
-    def is_valid(self, value):
+    def validate(self, value):
         if not isinstance(value, list):
             raise ValidationError("Value must be list type")
         if not value:
