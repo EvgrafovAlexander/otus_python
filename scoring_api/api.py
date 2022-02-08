@@ -137,6 +137,7 @@ class Meta(type):
 class Base(metaclass=Meta):
     def __init__(self, args):
         self.args = args
+        self.errors = {}
 
     def validate(self):
         for field in self.fields:
@@ -146,11 +147,18 @@ class Base(metaclass=Meta):
 
             if value is None:
                 if field.required:
-                    raise ValidationError("Required value not found")
+                    self.errors[name] = "Required value not found"
                 elif not field.nullable:
-                    raise ValidationError("Required value can't be zero")
+                    self.errors[name] = "Required value can't be zero"
             else:
-                field.validate(value)
+                try:
+                    field.validate(value)
+                except Exception as e:
+                    self.errors[name] = str(e)
+
+    def is_valid(self):
+        self.validate()
+        return False if self.errors else True
 
 
 class MethodRequest(Base):
@@ -169,14 +177,6 @@ class ClientsInterestsRequest(Base):
     client_ids = ClientIDsField(required=True, nullable=False)
     date = DateField(required=False, nullable=True)
 
-    def validate(self):
-        super().validate()
-        for attr in self.fields:
-            attribute = getattr(self, attr.name)
-            if attribute is None:
-                return False, {'error': f'Incorrected value {attribute} if field {attr}'}
-        return True, None
-
 
 class OnlineScoreRequest(Base):
     first_name = CharField(required=False, nullable=True)
@@ -191,9 +191,9 @@ class OnlineScoreRequest(Base):
         if (self.phone and self.email) \
                 or (self.first_name and self.last_name) \
                 or (self.gender is not None and self.birthday):
-            return True, None
-        return False, {'error': 'Required field combinations not found: phone and email,'
-                                ' first name and last name, gender and birthday'}
+            return
+        self.errors['Combinations Error'] = 'Required field combinations not found: phone and email,' \
+                                            ' first name and last name, gender and birthday'
 
 
 # --- Request Handlers ---
@@ -210,15 +210,14 @@ class RequestHandler(ABC):
 
 class OnlineScoreRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
+        if not data.is_valid():
+            return str(data.errors[0]), INVALID_REQUEST
+
         if request.is_admin:
             score = 42
         else:
             score = scoring.get_score(store, data.phone, data.email, data.birthday,
                                       data.gender, data.first_name, data.last_name)
-
-            is_valid, valid_info = data.validate()
-            if not is_valid:
-                return valid_info, INVALID_REQUEST
 
         context['has'] = self.get_context(data)
         return {'score': score}, OK
@@ -235,7 +234,9 @@ class OnlineScoreRequestHandler(RequestHandler):
 
 class ClientsInterestsRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
-        data.validate()
+        if not data.is_valid():
+            return str(data.errors[0]), INVALID_REQUEST
+
         result = dict()
         for client_id in data.client_ids:
             interests = scoring.get_interests(None, None)
@@ -273,9 +274,9 @@ def method_handler(request, ctx, store):
 
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
+    request = MethodRequest(request['body'])
+    request.validate()
     try:
-        request = MethodRequest(request['body'])
-        request.validate()
         if not check_auth(request):
             return ERRORS[FORBIDDEN], FORBIDDEN
 
