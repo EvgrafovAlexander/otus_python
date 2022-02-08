@@ -160,6 +160,9 @@ class Base(metaclass=Meta):
         self.validate()
         return False if self.errors else True
 
+    def get_found_errors(self):
+        return str(self.errors)
+
 
 class MethodRequest(Base):
     account = CharField(required=False, nullable=True)
@@ -211,7 +214,7 @@ class RequestHandler(ABC):
 class OnlineScoreRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
         if not data.is_valid():
-            return str(data.errors[0]), INVALID_REQUEST
+            return data.get_found_errors(), INVALID_REQUEST
 
         if request.is_admin:
             score = 42
@@ -235,7 +238,7 @@ class OnlineScoreRequestHandler(RequestHandler):
 class ClientsInterestsRequestHandler(RequestHandler):
     def get_response(self, data, request, context, store):
         if not data.is_valid():
-            return str(data.errors[0]), INVALID_REQUEST
+            return data.get_found_errors(), INVALID_REQUEST
 
         result = dict()
         for client_id in data.client_ids:
@@ -274,19 +277,17 @@ def method_handler(request, ctx, store):
 
     if not (request['body'] or request['headers']):
         return None, INVALID_REQUEST
+
     request = MethodRequest(request['body'])
     if not request.is_valid():
-        return str(request.errors), INVALID_REQUEST
+        return request.get_found_errors(), INVALID_REQUEST
     if not check_auth(request):
         return ERRORS[FORBIDDEN], FORBIDDEN
-    args = request.arguments
-    data = requests[request.method]['method'](args)
+
+    data = requests[request.method]['method'](request.arguments)
     handler = requests[request.method]['handler']
-    
-    try:
-        return handler().get_response(data, request, ctx, store)
-    except Exception:
-        return ERRORS[INVALID_REQUEST], INVALID_REQUEST
+
+    return handler().get_response(data, request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
