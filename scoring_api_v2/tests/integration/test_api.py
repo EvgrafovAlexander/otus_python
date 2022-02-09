@@ -5,7 +5,6 @@ import datetime
 import api
 from store import Store
 
-
 context = {}
 headers = {}
 store = Store()
@@ -123,18 +122,18 @@ def test_invalid_interests_request(arguments):
     assert api.INVALID_REQUEST == code
     assert len(response)
 
-# TODO: Доработать тест
-#@pytest.mark.parametrize("arguments", test_ok_interests_arguments_data = [
-#    ({"client_ids": [1, 2, 3], "date": datetime.datetime.today().strftime("%d.%m.%Y")}),
-#    ({"client_ids": [1, 2], "date": "19.07.2017"}),
-#    ({"client_ids": [0]}),
-#])
-#def test_ok_interests_request(arguments):
-#    request = {"account": "horns&hoofs", "login": "h&f", "method": "clients_interests", "arguments": arguments}
-#    set_valid_auth(request)
-#    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
-#    assert api.OK == code
-#    #assert len(response)
+
+@pytest.mark.parametrize("arguments", [
+    ({"client_ids": [1, 2, 3], "date": datetime.datetime.today().strftime("%d.%m.%Y")}),
+    ({"client_ids": [1, 2], "date": "19.07.2017"}),
+    ({"client_ids": [0]}),
+], ids=idfn)
+def test_ok_interests_request(arguments):
+    request = {"account": "horns&hoofs", "login": "h&f", "method": "clients_interests", "arguments": arguments}
+    set_valid_auth(request)
+    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
+    assert api.OK == code
+    assert len(response)
 
 
 if __name__ == "__main__":
