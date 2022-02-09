@@ -76,7 +76,7 @@ class EmailField(CharField):
 class PhoneField(AbstractField):
     def validate(self, value):
         if not isinstance(value, str | int):
-            raise TypeError("Value must be str or int type")
+            raise ValidationError("Value must be str or int type")
         value = str(value)
         if len(value) != 11:
             raise ValidationError("Length must be equal 11 symbols")
