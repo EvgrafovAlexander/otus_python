@@ -158,7 +158,7 @@ class Base(metaclass=Meta):
 
     def is_valid(self):
         self.validate()
-        return False if self.errors else True
+        return not self.errors
 
     def get_found_errors(self):
         return str(self.errors)
