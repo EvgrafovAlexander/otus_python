@@ -64,8 +64,8 @@ test_invalid_interests_arguments_data = [
 
 test_ok_interests_arguments_data = [
     ({"client_ids": [1, 2, 3], "date": datetime.datetime.today().strftime("%d.%m.%Y")}),
-    #({"client_ids": [1, 2], "date": "19.07.2017"}),
-    #({"client_ids": [0]}),
+    ({"client_ids": [1, 2], "date": "19.07.2017"}),
+    ({"client_ids": [0]}),
 ]
 
 
@@ -139,13 +139,13 @@ def test_invalid_interests_request(arguments_data):
 
 
 # TODO: Доработать тест
-@pytest.mark.parametrize("arguments_data", test_ok_interests_arguments_data)
-def test_ok_interests_request(arguments_data):
-    request = {"account": "horns&hoofs", "login": "h&f", "method": "clients_interests", "arguments": arguments_data}
-    set_valid_auth(request)
-    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
-    assert api.OK == code
-    #assert len(response)
+#@pytest.mark.parametrize("arguments_data", test_ok_interests_arguments_data)
+#def test_ok_interests_request(arguments_data):
+#    request = {"account": "horns&hoofs", "login": "h&f", "method": "clients_interests", "arguments": arguments_data}
+#    set_valid_auth(request)
+#    response, code = api.method_handler({"body": request, "headers": headers}, context, store)
+#    assert api.OK == code
+#    #assert len(response)
 
 
 if __name__ == "__main__":
