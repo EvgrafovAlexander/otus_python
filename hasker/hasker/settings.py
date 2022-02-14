@@ -30,7 +30,9 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+# TODO: Добавить все используемые приложения
 INSTALLED_APPS = [
+    'posts',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
