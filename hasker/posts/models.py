@@ -14,4 +14,4 @@ class Post(models.Model):
     text = models.TextField()
     created_date = models.DateTimeField("date created", auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
-    tags = models.ManyToManyField('Tag')
+    #tags = models.ManyToManyField('Tag')
