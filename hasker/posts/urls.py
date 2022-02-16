@@ -4,5 +4,9 @@ from . import views
 
 
 urlpatterns = [
-    path("", views.index, name="index")
+    # /
+    path("", views.index, name="index"),
+    # профиль пользователя
+    #path("<str:username>/", views.profile, name="profile")
+
 ]

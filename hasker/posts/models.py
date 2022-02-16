@@ -9,9 +9,16 @@ class Tag(models.Model):
     name = models.CharField(max_length=255)
 
 
-class Post(models.Model):
-    header = models.TextField()
+class Question(models.Model):
+    title = models.TextField()
     text = models.TextField()
-    created_date = models.DateTimeField("date created", auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    pub_date = models.DateTimeField("date publicated", auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questions")
     #tags = models.ManyToManyField('Tag')
+
+
+class Answer(models.Model):
+    title = models.TextField()
+    text = models.TextField()
+    pub_date = models.DateTimeField("date publicated", auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answers")

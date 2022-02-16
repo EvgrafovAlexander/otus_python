@@ -1,11 +1,11 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .models import Post
+from .models import User, Question
 
 # Create your views here.
 
 
 def index(request):
-    latest = Post.objects.order_by('-created_date')[:10]
-    return render(request, "index.html", {"posts": latest})
+    latest = Question.objects.order_by('-pub_date')[:10]
+    return render(request, "index.html", {"questions": latest})

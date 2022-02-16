@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Последние обновления{% endblock %}
+{% block title %}Hasker{% endblock %}
 {% block header %}Последние обновления{% endblock %}
 {% block content %}
 
-    {% for post in posts %}
+    {% for question in questions %}
     <h3>
-        Автор: {{ post.author }}, Дата публикации: {{ post.created_date|date:"d M Y" }}
+        Автор: {{ question.author }}, {{ question.title }}, Дата публикации: {{ question.pub_date|date:"d M Y" }}
     </h3>
     <p>{{ post.text|linebreaksbr }}</p>
     {% if not forloop.last %}<hr>{% endif %}
