@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Hasker{% endblock %}
-{% block header %}Последние обновления{% endblock %}
+{% block header %}Последние обновления
+{% endblock %}
 {% block content %}
 
     {% for question in questions %}
-    <h3>
-        Автор: {{ question.author }}, {{ question.title }}, Дата публикации: {{ question.pub_date|date:"d M Y" }}
-    </h3>
+    <h4>
+        Автор: {{ question.author }}, <button type="button" class="btn btn-link">{{ question.title }}</button>,
+        Дата публикации: {{ question.pub_date|date:"d M Y" }}
+    </h4>
     <p>{{ post.text|linebreaksbr }}</p>
     {% if not forloop.last %}<hr>{% endif %}
     {% endfor %}
