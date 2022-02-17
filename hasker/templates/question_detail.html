@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Hasker{% endblock %}
+
+{% block header %}{{ question.title }}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+{{ question.text }}<br><br>
+{{ question.author }}<br><br>
+{{ question.pub_date }}<br><br>
+
+<a class="btn btn-primary" href="#" role="button">Ответить</a>    <br><br>
+<a class="btn btn-primary" href="{% url 'index' %}" role="button">На главную</a>
+</div>
+
+{% endblock %}
