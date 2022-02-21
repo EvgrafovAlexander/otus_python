@@ -1,11 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Вход{% endblock %}
-{% block header %}<h3>Авторизация</h3>
+{% block title %}Hasker{% endblock %}
+
+{% block header %}
 {% endblock %}
+
 {% block content %}
 
-    <h2>Вход</h2>
+<form method="POST">{% csrf_token %}
 
+<!-- form variable -->
+ {{ form.as_p }}
 
+  <input type="submit" name="sumbit">
+</form>
 
 {% endblock %}
