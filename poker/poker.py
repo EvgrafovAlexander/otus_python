@@ -9,7 +9,7 @@
 # ранг(rank)
 # Масти: трефы(clubs, C), пики(spades, S), червы(hearts, H), бубны(diamonds, D)
 # Ранги: 2, 3, 4, 5, 6, 7, 8, 9, 10 (ten, T), валет (jack, J), дама (queen, Q), король (king, K), туз (ace, A)
-# Например: AS - туз пик (ace of spades), TH - дестяка черв (ten of hearts), 3C - тройка треф (three of clubs)
+# Например: AS - туз пик (ace of spades), TH - десятка черв (ten of hearts), 3C - тройка треф (three of clubs)
 
 # Задание со *
 # Реализуйте функцию best_wild_hand, которая принимает на вход
@@ -17,7 +17,7 @@
 # (относительно значения, возвращаемого hand_rank)
 # "руку" из 5ти карт. Кроме прочего в данном варианте "рука"
 # может включать джокера. Джокеры могут заменить карту любой
-# масти и ранга того же цвета, в колоде два джокерва.
+# масти и ранга того же цвета, в колоде два джокера.
 # Черный джокер '?B' может быть использован в качестве треф
 # или пик любого ранга, красный джокер '?R' - в качестве черв и бубен
 # любого ранга.
@@ -55,8 +55,21 @@ def hand_rank(hand):
 def card_ranks(hand):
     """Возвращает список рангов (его числовой эквивалент),
     отсортированный от большего к меньшему"""
-    equal_ranks = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
-                   '9': 9, 'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    equal_ranks = {
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+        "7": 7,
+        "8": 8,
+        "9": 9,
+        "T": 10,
+        "J": 11,
+        "Q": 12,
+        "K": 13,
+        "A": 14,
+    }
     return sorted([equal_ranks[list(card)[0]] for card in hand], reverse=True)
 
 
@@ -108,7 +121,7 @@ def two_pair(ranks):
 
 
 def best_hand(hand):
-    """Из "руки" в 7 карт возвращает лучшую "руку" в 5 карт """
+    """Из "руки" в 7 карт возвращает лучшую "руку" в 5 карт"""
     for i in itertools.combinations(hand, 5):
         res = hand_rank(i)
         print(i, res)
@@ -124,53 +137,73 @@ def best_wild_hand(hand):
 
 def test_card_ranks():
     print("test_card_ranks...")
-    assert (card_ranks("6C 7C 8C 9C TC 5C JS".split())
-            == [11, 10, 9, 8, 7, 6, 5])
+    assert card_ranks("6C 7C 8C 9C TC 5C JS".split()) == [11, 10, 9, 8, 7, 6, 5]
 
 
 def test_flush():
     print("test_flush...")
-    assert (flush("6C 7C 8C 9C TC 5C JS".split())
-            == False)
-    assert (flush("6C 7C 8C 9C TC 5C JC".split())
-            == True)
+    assert flush("6C 7C 8C 9C TC 5C JS".split()) == False
+    assert flush("6C 7C 8C 9C TC 5C JC".split()) == True
 
 
 def test_straight():
     print("test_straight...")
-    assert (straight([14, 10, 9, 8, 7, 6, 5])
-            == True)
+    assert straight([14, 10, 9, 8, 7, 6, 5]) == True
 
 
 def test_kind():
     print("test_kind...")
-    assert (kind(3, [2, 10, 9, 2, 7, 2, 5])
-            == 2)
+    assert kind(3, [2, 10, 9, 2, 7, 2, 5]) == 2
 
 
 def test_best_hand():
     print("test_best_hand...")
-    #assert (sorted(best_hand("6C 7C 8C 9C TC 5C JS".split()))
+    # assert (sorted(best_hand("6C 7C 8C 9C TC 5C JS".split()))
     #        == ['6C', '7C', '8C', '9C', 'TC'])
-    assert (sorted(best_hand("TD TC TH 7C 7D 8C 8S".split()))
-            == ['8C', '8S', 'TC', 'TD', 'TH'])
-    assert (sorted(best_hand("JD TC TH 7C 7D 7S 7H".split()))
-            == ['7C', '7D', '7H', '7S', 'JD'])
-    print('OK')
+    assert sorted(best_hand("TD TC TH 7C 7D 8C 8S".split())) == [
+        "8C",
+        "8S",
+        "TC",
+        "TD",
+        "TH",
+    ]
+    assert sorted(best_hand("JD TC TH 7C 7D 7S 7H".split())) == [
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "JD",
+    ]
+    print("OK")
 
 
 def test_best_wild_hand():
     print("test_best_wild_hand...")
-    assert (sorted(best_wild_hand("6C 7C 8C 9C TC 5C ?B".split()))
-            == ['7C', '8C', '9C', 'JC', 'TC'])
-    assert (sorted(best_wild_hand("TD TC 5H 5C 7C ?R ?B".split()))
-            == ['7C', 'TC', 'TD', 'TH', 'TS'])
-    assert (sorted(best_wild_hand("JD TC TH 7C 7D 7S 7H".split()))
-            == ['7C', '7D', '7H', '7S', 'JD'])
-    print('OK')
+    assert sorted(best_wild_hand("6C 7C 8C 9C TC 5C ?B".split())) == [
+        "7C",
+        "8C",
+        "9C",
+        "JC",
+        "TC",
+    ]
+    assert sorted(best_wild_hand("TD TC 5H 5C 7C ?R ?B".split())) == [
+        "7C",
+        "TC",
+        "TD",
+        "TH",
+        "TS",
+    ]
+    assert sorted(best_wild_hand("JD TC TH 7C 7D 7S 7H".split())) == [
+        "7C",
+        "7D",
+        "7H",
+        "7S",
+        "JD",
+    ]
+    print("OK")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_card_ranks()
     test_flush()
     test_straight()
