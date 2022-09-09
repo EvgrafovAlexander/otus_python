@@ -35,8 +35,8 @@ REF_PATTERN = r"(GET|POST).*(HTTP)"
 
 def get_report(log: Log) -> Tuple[List[dict], float]:
     """
-    Получение отчёта по ранее найденному логу
-    :log: данные по логу
+    Получение отчёта по ранее найденному логу.
+    :param log: данные по логу
 
     :return: Отчёт, сортированный по убыванию
             времени обработки запроса
@@ -52,8 +52,8 @@ def get_report(log: Log) -> Tuple[List[dict], float]:
 
 def get_last_log(log_dir: str) -> namedtuple or None:
     """
-    Получение наименования файла последней записи логов интерфейса
-    :log_dir: директория чтения логов
+    Получение наименования файла последней записи логов интерфейса.
+    :param log_dir: директория чтения логов
 
     :return: Tuple вида:
              date - дата записи лога
@@ -82,9 +82,9 @@ def get_last_log(log_dir: str) -> namedtuple or None:
 
 def parse_log(log: Log, parse_func: Callable) -> Tuple[Dict[str, List[float]], int, int, int]:
     """
-    Сбор информации по логу
-    :log_dir: информация о рассматриваемом логе
-    :parse_func: функция парсинга строки
+    Сбор информации по логу.
+    :param log: информация о рассматриваемом логе
+    :param parse_func: функция парсинга строки
 
     :return: requests - словарь вида url-запрос: список request_time
              full_time - общая длительность выполнения запросов
@@ -113,7 +113,7 @@ def parse_log(log: Log, parse_func: Callable) -> Tuple[Dict[str, List[float]], i
 
 def is_already_analyzed(log: Log, report_dir: str) -> bool:
     """
-    Проверка на существование отчёта по данному логу
+    Проверка на существование отчёта по данному логу.
     :param log: информация о логе
     :param report_dir: директория хранения отчётов
 
@@ -125,8 +125,8 @@ def is_already_analyzed(log: Log, report_dir: str) -> bool:
 
 def parse_line(line: bytes) -> Tuple[str, float] or None:
     """
-    Парсинг строки лога
-    :line: строка лога
+    Парсинг строки лога.
+    :param line: строка лога
 
     :return: request - http-запрос
              request_time - длительность обработки запроса
@@ -144,10 +144,10 @@ def parse_line(line: bytes) -> Tuple[str, float] or None:
 def calc_stat(requests: dict, full_time: float, full_cnt: int) -> List[dict]:
     """
     Вычисление статистических показателей
-    и подготовка результирующих данных
-    :requests: словарь вида url-запрос: список request_time
-    :full_time: общая длительность выполнения запросов
-    :full_cnt: общее количество выполненных запросов
+    и подготовка результирующих данных.
+    :param requests: словарь вида url-запрос: список request_time
+    :param full_time: общая длительность выполнения запросов
+    :param full_cnt: общее количество выполненных запросов
 
     :return: список с показателями по каждому url
     """
@@ -176,11 +176,11 @@ def calc_stat(requests: dict, full_time: float, full_cnt: int) -> List[dict]:
 
 def save_report(log: namedtuple, report: List[dict], report_dir: str, report_size: int) -> None:
     """
-    Запись отчёта в html
-    :log: информация о файле логирования
-    :report: сформированный отчёт
-    :report_dir: директория для записи отчёта
-    :report_size: максимальный размер отчёта
+    Запись отчёта в html.
+    :param log: информация о файле логирования
+    :param report: сформированный отчёт
+    :param report_dir: директория для записи отчёта
+    :param report_size: максимальный размер отчёта
 
     :return: None
     """
@@ -196,7 +196,7 @@ def save_report(log: namedtuple, report: List[dict], report_dir: str, report_siz
 def set_config(args, conf_default: dict) -> dict:
     """
     Настройка конфигурации с приоритетом
-    по убыванию "из файла config -> из переданных параметров -> по умолчанию"
+    по убыванию "из файла config -> из переданных параметров -> по умолчанию".
     :param args: аргументы пользователя
     :param conf_default: конфигурация по умолчанию
 
