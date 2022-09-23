@@ -207,28 +207,20 @@ def set_config(args, conf_default: dict) -> dict:
              ERROR_PERC_LIMIT - предельный % ошибок
              LOG_FILE_PATH - путь до файла с логом
     """
-    if args.config_file_path:
-        # config из файла
-        try:
-            conf = configparser.ConfigParser()
-            conf.read(args.config_file_path)
+    try:
+        conf = configparser.ConfigParser()
+        conf.read(args.config_file_path)
+        conf = conf["DEFAULT"]
 
-            report_size = int(conf["DEFAULT"]["REPORT_SIZE"])
-            report_dir = conf["DEFAULT"]["REPORT_DIR"]
-            log_dir = conf["DEFAULT"]["LOG_DIR"]
-            err_perc_limit = float(conf["DEFAULT"]["ERROR_PERC_LIMIT"])
-            log_file_path = conf["DEFAULT"]["LOG_FILE_PATH"]
+        report_size = int(conf.get("REPORT_SIZE", conf_default["REPORT_SIZE"]))
+        report_dir = conf.get("REPORT_DIR", conf_default["REPORT_DIR"])
+        log_dir = conf.get("LOG_DIR", conf_default["LOG_DIR"])
+        err_perc_limit = float(conf.get("ERROR_PERC_LIMIT", conf_default["ERROR_PERC_LIMIT"]))
+        log_file_path = conf.get("LOG_FILE_PATH", conf_default["LOG_FILE_PATH"])
 
-        except Exception as e:
-            logging.exception("Возникло исключение при чтении конфигурационного файла %s, %s", type(e), e.args)
-            sys.exit(1)
-    else:
-        # config из параметров
-        report_size = int(args.report_size) if args.report_size else conf_default["REPORT_SIZE"]
-        report_dir = args.report_dir if args.report_dir else conf_default["REPORT_DIR"]
-        log_dir = args.log_dir if args.log_dir else conf_default["LOG_DIR"]
-        err_perc_limit = float(args.err_perc_limit) if args.err_perc_limit else conf_default["ERROR_PERC_LIMIT"]
-        log_file_path = args.log_file_path if args.log_file_path else conf_default["LOG_FILE_PATH"]
+    except Exception as e:
+        logging.exception("Возникло исключение при чтении конфигурационного файла %s, %s", type(e), e.args)
+        sys.exit(1)
 
     logging.info("Директория чтения логов: %s", log_dir)
     logging.info("Директория записи отчётов: %s", report_dir)
@@ -248,11 +240,6 @@ def set_config(args, conf_default: dict) -> dict:
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-log", "--log_dir", type=str, help="Log dir path example: ./log/")
-    parser.add_argument("-rep", "--report_dir", type=str, help="Reports dir path example: ./reports/")
-    parser.add_argument("-size", "--report_size", type=int, help="Report size example: 1000")
-    parser.add_argument("-err", "--err_perc_limit", type=float, help="Error limit % example: 50.0")
-    parser.add_argument("-path", "--log_file_path", type=str, help="Logging file path: ./log_analyzer.log")
     parser.add_argument("-config", "--config_file_path", type=str, help="Configuration file path: ./config.ini")
     args = parser.parse_args()
     return args
