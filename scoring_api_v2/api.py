@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import json
 import datetime
-import logging
 import hashlib
+import json
+import logging
 import uuid
 from abc import ABC, abstractmethod
-from dateutil.relativedelta import relativedelta
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from optparse import OptionParser
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import scoring
+from dateutil.relativedelta import relativedelta
 from store import Store
 
 SALT = "Otus"
@@ -70,8 +70,8 @@ class ArgumentsField(AbstractField):
 class EmailField(CharField):
     def validate(self, value):
         super().validate(value)
-        if '@' not in value:
-            raise ValidationError('Value must exist @.')
+        if "@" not in value:
+            raise ValidationError("Value must exist @.")
 
 
 class PhoneField(AbstractField):
@@ -81,7 +81,7 @@ class PhoneField(AbstractField):
         value = str(value)
         if len(value) != 11:
             raise ValidationError("Length must be equal 11 symbols")
-        if value[0] != '7':
+        if value[0] != "7":
             raise ValidationError("Thirst symbol must be 7")
 
 
@@ -89,7 +89,7 @@ class DateField(AbstractField):
     def validate(self, value):
         try:
             isinstance(datetime.datetime.strptime(value, "%d.%m.%Y"), datetime.date)
-        except:
+        except Exception:
             raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
@@ -98,8 +98,8 @@ class BirthDayField(AbstractField):
         try:
             value = datetime.datetime.strptime(value, "%d.%m.%Y")
             if not relativedelta(datetime.datetime.now(), value).years < 70:
-                raise ValidationError('Age must be < 70.')
-        except:
+                raise ValidationError("Age must be < 70.")
+        except Exception:
             raise ValidationError("Value must be datetime format: DD.MM.YYYY")
 
 
@@ -192,12 +192,15 @@ class OnlineScoreRequest(Base):
 
     def validate(self):
         super().validate()
-        if (self.phone and self.email) \
-                or (self.first_name and self.last_name) \
-                or (self.gender is not None and self.birthday):
+        if (
+            (self.phone and self.email)
+            or (self.first_name and self.last_name)
+            or (self.gender is not None and self.birthday)
+        ):
             return
-        self.errors['Combinations Error'] = 'Required field combinations not found: phone and email,' \
-                                            ' first name and last name, gender and birthday'
+        self.errors["Combinations Error"] = (
+            "Required field combinations not found: phone and email," " first name and last name, gender and birthday"
+        )
 
 
 # --- Request Handlers ---
@@ -220,11 +223,12 @@ class OnlineScoreRequestHandler(RequestHandler):
         if request.is_admin:
             score = 42
         else:
-            score = scoring.get_score(store, data.phone, data.email, data.birthday,
-                                      data.gender, data.first_name, data.last_name)
+            score = scoring.get_score(
+                store, data.phone, data.email, data.birthday, data.gender, data.first_name, data.last_name
+            )
 
-        context['has'] = self.get_context(data)
-        return {'score': score}, OK
+        context["has"] = self.get_context(data)
+        return {"score": score}, OK
 
     @staticmethod
     def get_context(data):
@@ -241,11 +245,11 @@ class ClientsInterestsRequestHandler(RequestHandler):
         if not data.is_valid():
             return data.get_found_errors(), INVALID_REQUEST
 
-        result = dict()
+        result = {}
         for client_id in data.client_ids:
             interests = scoring.get_interests(store, client_id)
             result[client_id] = interests
-        context['nclients'] = self.get_context(data)
+        context["nclients"] = self.get_context(data)
         return result, OK
 
     @staticmethod
@@ -256,9 +260,9 @@ class ClientsInterestsRequestHandler(RequestHandler):
 
 def check_auth(request):
     if request.is_admin:
-        digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
+        digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode("utf-8")).hexdigest()
     else:
-        digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
+        digest = hashlib.sha512((request.account + request.login + SALT).encode("utf-8")).hexdigest()
     if digest == request.token:
         return True
     return False
@@ -266,48 +270,40 @@ def check_auth(request):
 
 def method_handler(request, ctx, store):
     requests = {
-        'online_score': {
-            'method': OnlineScoreRequest,
-            'handler': OnlineScoreRequestHandler
-        },
-        'clients_interests': {
-            'method': ClientsInterestsRequest,
-            'handler': ClientsInterestsRequestHandler
-        },
+        "online_score": {"method": OnlineScoreRequest, "handler": OnlineScoreRequestHandler},
+        "clients_interests": {"method": ClientsInterestsRequest, "handler": ClientsInterestsRequestHandler},
     }
 
-    if not (request['body'] or request['headers']):
+    if not (request["body"] or request["headers"]):
         return None, INVALID_REQUEST
 
-    request = MethodRequest(request['body'])
+    request = MethodRequest(request["body"])
     if not request.is_valid():
         return request.get_found_errors(), INVALID_REQUEST
     if not check_auth(request):
         return ERRORS[FORBIDDEN], FORBIDDEN
 
-    data = requests[request.method]['method'](request.arguments)
-    handler = requests[request.method]['handler']
+    data = requests[request.method]["method"](request.arguments)
+    handler = requests[request.method]["handler"]
 
     return handler().get_response(data, request, ctx, store)
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
-    router = {
-        "method": method_handler
-    }
+    router = {"method": method_handler}
     store = Store()
 
     def get_request_id(self, headers):
-        return headers.get('HTTP_X_REQUEST_ID', uuid.uuid4().hex)
+        return headers.get("HTTP_X_REQUEST_ID", uuid.uuid4().hex)
 
     def do_POST(self):
         response, code = {}, OK
         context = {"request_id": self.get_request_id(self.headers)}
         request = None
         try:
-            data_string = self.rfile.read(int(self.headers['Content-Length']))
+            data_string = self.rfile.read(int(self.headers["Content-Length"]))
             request = json.loads(data_string)
-        except:
+        except Exception:
             code = BAD_REQUEST
 
         if request:
@@ -315,9 +311,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
             logging.info("%s: %s %s" % (self.path, data_string, context["request_id"]))
             if path in self.router:
                 try:
-                    response, code = self.router[path]({"body": request, "headers": self.headers},
-                                                       context,
-                                                       self.store)
+                    response, code = self.router[path]({"body": request, "headers": self.headers}, context, self.store)
                 except Exception as e:
                     logging.exception("Unexpected error: %s" % e)
                     code = INTERNAL_ERROR
@@ -342,8 +336,12 @@ if __name__ == "__main__":
     op.add_option("-p", "--port", action="store", type=int, default=8080)
     op.add_option("-l", "--log", action="store", default=None)
     (opts, args) = op.parse_args()
-    logging.basicConfig(filename=opts.log, level=logging.INFO,
-                        format='[%(asctime)s] %(levelname).1s %(message)s', datefmt='%Y.%m.%d %H:%M:%S')
+    logging.basicConfig(
+        filename=opts.log,
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname).1s %(message)s",
+        datefmt="%Y.%m.%d %H:%M:%S",
+    )
     server = HTTPServer(("localhost", opts.port), MainHTTPHandler)
     logging.info("Starting server at %s" % opts.port)
     try:

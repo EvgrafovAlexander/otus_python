@@ -1,6 +1,4 @@
 import pytest
-
-from redis.exceptions import ConnectionError
 from store import Store
 
 
@@ -12,12 +10,12 @@ def redis_init(tmpdir):
 
 
 def test_get_unknown_key(redis_init):
-    assert redis_init.get('1') is None
+    assert redis_init.get("1") is None
 
 
 def test_readwrite(redis_init):
-    redis_init.cache_set('key', 42, 60)
-    assert redis_init.get('key') == 42
+    redis_init.cache_set("key", 42, 60)
+    assert redis_init.get("key") == 42
 
 
 if __name__ == "__main__":
