@@ -12,8 +12,9 @@ class Request:
     ENABLED_METHODS = ["GET", "HEAD"]
     HTTP_ERRORS = {ERROR_403: "Forbidden", ERROR_404: "Not Found", ERROR_405: "Method Not Allowed"}
 
-    def __init__(self, request_bytes: bytes):
+    def __init__(self, request_bytes: bytes, document_root):
         self.request_bytes = request_bytes
+        self.document_root = document_root
 
     def get_response(self) -> bytes:
         """

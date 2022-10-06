@@ -1,4 +1,5 @@
 # stdlib
+import argparse
 import socket
 
 # project
@@ -25,7 +26,7 @@ class Server:
             if not data:
                 continue
 
-            response = Request(data).get_response()
+            response = Request(data, DOCUMENT_ROOT).get_response()
             print(data)
 
             print("отправка данных")
@@ -49,8 +50,19 @@ class Server:
             return response
 
 
-ADDR = "0.0.0.0"
-PORT = 9000
-server = Server(ADDR, PORT)
-server.bind()
-server.run()
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", "--document_root", type=str, help="document root path: /OTUServer")
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    ADDR = "0.0.0.0"
+    PORT = 9000
+    args = get_args()
+    DOCUMENT_ROOT = args.document_root
+
+    server = Server(ADDR, PORT)
+    server.bind()
+    server.run()
