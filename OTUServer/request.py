@@ -1,9 +1,11 @@
 # stdlib
 import email
+import mimetypes
 import os
 from datetime import datetime
 from io import StringIO
 
+CODE_200 = 200
 ERROR_403 = 403
 ERROR_404 = 404
 ERROR_405 = 405
@@ -13,6 +15,7 @@ class Request:
     ENABLED_METHODS = ["GET", "HEAD"]
     ENABLED_FORMATS = ["html", "css", "js", "jpg", "jpeg", "png", "gif", "swf"]
     HTTP_ERRORS = {ERROR_403: "Forbidden", ERROR_404: "Not Found", ERROR_405: "Method Not Allowed"}
+    HTTP_CODES = {CODE_200: "OK"}
 
     def __init__(self, request_bytes: bytes, document_root):
         self.request_bytes = request_bytes
@@ -57,17 +60,35 @@ class Request:
             return self._get_error_message(ERROR_404)
 
         if os.path.isdir(path) and "index.html" in os.listdir(path):
-            return self._get_message(path + "index.html", "html")
+            return self._get_message(req_data["method"], path + "index.html", ".html")
 
         if os.path.isfile(path):
             name, extension = os.path.splitext(path)
-            return self._get_message(path, extension)
+            return self._get_message(req_data["method"], path, extension)
 
         return self._get_error_message(ERROR_404)
 
-    def _get_message(self, filepath, extension) -> bytes:
-        print()
-        return b""
+    def _get_message(self, method: str, filepath: str, extension: str) -> bytes:
+        try:
+            with open(filepath) as f:
+                content = "".join(f.readlines())
+                content_len = len(content)
+                content_type = mimetypes.types_map[extension]
+                date = datetime.now().ctime()
+                message = (
+                    f"HTTP/1.1 {CODE_200} {self.HTTP_CODES[CODE_200]}\r\n"
+                    f"Date: {date}\r\n"
+                    f"Server: Python 3.10\r\n"
+                    f"Content-Length: {content_len}\r\n"
+                    f"Content-Type: {content_type}\r\n"
+                    f"Connection: Closed\r\n\r\n"
+                )
+                if method == "GET":
+                    message += f"{content}"
+
+                return str.encode(message)
+        except Exception:
+            return self._get_error_message(ERROR_403)
 
     def _get_error_message(self, error_code: int) -> bytes:
         """
