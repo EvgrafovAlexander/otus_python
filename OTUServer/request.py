@@ -1,5 +1,6 @@
 # stdlib
 import email
+import os
 from datetime import datetime
 from io import StringIO
 
@@ -10,6 +11,7 @@ ERROR_405 = 405
 
 class Request:
     ENABLED_METHODS = ["GET", "HEAD"]
+    ENABLED_FORMATS = ["html", "css", "js", "jpg", "jpeg", "png", "gif", "swf"]
     HTTP_ERRORS = {ERROR_403: "Forbidden", ERROR_404: "Not Found", ERROR_405: "Method Not Allowed"}
 
     def __init__(self, request_bytes: bytes, document_root):
@@ -50,7 +52,22 @@ class Request:
         if req_data["method"] not in self.ENABLED_METHODS:
             return self._get_error_message(ERROR_405)
 
-        return self._get_error_message(ERROR_405)
+        path = self.document_root + req_data["body"]
+        if not os.path.exists(path):
+            return self._get_error_message(ERROR_404)
+
+        if os.path.isdir(path) and "index.html" in os.listdir(path):
+            return self._get_message(path + "index.html", "html")
+
+        if os.path.isfile(path):
+            name, extension = os.path.splitext(path)
+            return self._get_message(path, extension)
+
+        return self._get_error_message(ERROR_404)
+
+    def _get_message(self, filepath, extension) -> bytes:
+        print()
+        return b""
 
     def _get_error_message(self, error_code: int) -> bytes:
         """
@@ -60,14 +77,12 @@ class Request:
         :return: error_message - сообщение об ошибке
         """
         error_descr = self.HTTP_ERRORS[error_code]
-        date = str(datetime.now())
-        # TODO: Как считать content_length
-        content_length = 123
-        error_message = f"""HTTP/1.1 {error_code} {error_descr}\r\n
-                            Date: {date}\r\n
-                            Server: Python 3.10\r\n
-                            Content-Length: {content_length}\r\n
-                            Connection: Closed\r\n
-                            Content-Type: text/html; charset=iso-8859-1\r\n\r\n
-                        """
+        date = datetime.now().ctime()
+        error_message = (
+            f"HTTP/1.1 {error_code} {error_descr}\r\n"
+            f"Date: {date}\r\n"
+            f"Server: Python 3.10\r\n"
+            f"Connection: Closed\r\n\r\n"
+        )
+
         return str.encode(error_message)
