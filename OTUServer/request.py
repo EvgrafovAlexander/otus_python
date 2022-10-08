@@ -70,8 +70,8 @@ class Request:
 
     def _get_message(self, method: str, filepath: str, extension: str) -> bytes:
         try:
-            with open(filepath) as f:
-                content = "".join(f.readlines())
+            with open(filepath, "rb") as f:
+                content = f.read()
                 content_len = len(content)
                 content_type = mimetypes.types_map[extension]
                 date = datetime.now().ctime()
@@ -83,10 +83,10 @@ class Request:
                     f"Content-Type: {content_type}\r\n"
                     f"Connection: Closed\r\n\r\n"
                 )
+                message = str.encode(message)
                 if method == "GET":
-                    message += f"{content}"
-
-                return str.encode(message)
+                    message += content
+                return message
         except Exception:
             return self._get_error_message(ERROR_403)
 
