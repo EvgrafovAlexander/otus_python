@@ -2,6 +2,7 @@
 import email
 import mimetypes
 import os
+import urllib.parse
 from datetime import datetime
 from io import StringIO
 
@@ -39,10 +40,10 @@ class Request:
         """
         request_string = self.request_bytes.decode("utf-8")
         request, headers = request_string.split("\r\n", 1)
-        method, req_body, http_ver = request.split(" ")
+        method, req_url, http_ver = request.split(" ")
         message = email.message_from_file(StringIO(headers))
         headers = dict(message.items())
-        parsed_request_data = {"method": method, "body": req_body, "ver": http_ver, "headers": headers}
+        parsed_request_data = {"method": method, "url": req_url, "ver": http_ver, "headers": headers}
         return parsed_request_data
 
     def _form_response(self, req_data: dict) -> bytes:
@@ -55,7 +56,8 @@ class Request:
         if req_data["method"] not in self.ENABLED_METHODS:
             return self._get_error_message(ERROR_405)
 
-        path = self.document_root + req_data["body"]
+        query = self._prepare_query(req_data["url"])
+        path = self.document_root + query
         if not os.path.exists(path):
             return self._get_error_message(ERROR_404)
 
@@ -67,6 +69,12 @@ class Request:
             return self._get_message(req_data["method"], path, extension)
 
         return self._get_error_message(ERROR_404)
+
+    @staticmethod
+    def _prepare_query(query):
+        query = urllib.parse.unquote(query)
+        parsed_url = urllib.parse.urlparse(query)
+        return parsed_url.path
 
     def _get_message(self, method: str, filepath: str, extension: str) -> bytes:
         try:

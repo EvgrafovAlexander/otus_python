@@ -12,12 +12,25 @@ class HttpServer(unittest.TestCase):
     def tearDown(self):
         self.conn.close()
 
+    # TODO: Добавить test_empty_request
+
     def test_server_header(self):
         """Server header exists"""
         self.conn.request("GET", "/httptest/")
         r = self.conn.getresponse()
         server = r.getheader("Server")
         self.assertIsNotNone(server)
+
+    def test_directory_index(self):
+        """directory index file exists"""
+        self.conn.request("GET", "/httptest/dir2/")
+        r = self.conn.getresponse()
+        data = r.read()
+        length = r.getheader("Content-Length")
+        self.assertEqual(int(r.status), 200)
+        self.assertEqual(int(length), 34)
+        self.assertEqual(len(data), 34)
+        self.assertEqual(data, b"<html>Directory index file</html>\n")
 
     def test_index_not_found(self):
         """directory index file absent"""
@@ -31,23 +44,6 @@ class HttpServer(unittest.TestCase):
         r = self.conn.getresponse()
         self.assertEqual(int(r.status), 404)
 
-    def test_file_with_slash(self):
-        """slash after filename"""
-        self.conn.request("GET", "/httptest/dir2/page.html/")
-        r = self.conn.getresponse()
-        self.assertEqual(int(r.status), 404)
-
-    def test_directory_index(self):
-        """directory index file exists"""
-        self.conn.request("GET", "/httptest/dir2/")
-        r = self.conn.getresponse()
-        data = r.read()
-        length = r.getheader("Content-Length")
-        self.assertEqual(int(r.status), 200)
-        self.assertEqual(int(length), 34)
-        self.assertEqual(len(data), 34)
-        self.assertEqual(data, b"<html>Directory index file</html>\n")
-
     def test_file_in_nested_folders(self):
         """file located in nested folders"""
         self.conn.request("GET", "/httptest/dir1/dir12/dir123/deep.txt")
@@ -59,11 +55,55 @@ class HttpServer(unittest.TestCase):
         self.assertEqual(len(data), 20)
         self.assertEqual(data, b"bingo, you found it\n")
 
-    def test_post_method(self):
-        """post method forbidden"""
-        self.conn.request("POST", "/httptest/dir2/page.html")
+    def test_file_with_slash(self):
+        """slash after filename"""
+        self.conn.request("GET", "/httptest/dir2/page.html/")
         r = self.conn.getresponse()
-        self.assertIn(int(r.status), (400, 405))
+        self.assertEqual(int(r.status), 404)
+
+    def test_file_with_query_string(self):
+        """query string after filename"""
+        self.conn.request("GET", "/httptest/dir2/page.html?arg1=value&arg2=value")
+        r = self.conn.getresponse()
+        data = r.read()
+        length = r.getheader("Content-Length")
+        self.assertEqual(int(r.status), 200)
+        self.assertEqual(int(length), 38)
+        self.assertEqual(len(data), 38)
+        self.assertEqual(data, b"<html><body>Page Sample</body></html>\n")
+
+    def test_file_with_spaces(self):
+        """filename with spaces"""
+        self.conn.request("GET", "/httptest/space%20in%20name.txt")
+        r = self.conn.getresponse()
+        data = r.read()
+        length = r.getheader("Content-Length")
+        self.assertEqual(int(r.status), 200)
+        self.assertEqual(int(length), 19)
+        self.assertEqual(len(data), 19)
+        self.assertEqual(data, b"letters and spaces\n")
+
+    def test_file_urlencoded(self):
+        """urlencoded filename"""
+        self.conn.request("GET", "/httptest/dir2/%70%61%67%65%2e%68%74%6d%6c")
+        r = self.conn.getresponse()
+        data = r.read()
+        length = r.getheader("Content-Length")
+        self.assertEqual(int(r.status), 200)
+        self.assertEqual(int(length), 38)
+        self.assertEqual(len(data), 38)
+        self.assertEqual(data, b"<html><body>Page Sample</body></html>\n")
+
+    def test_large_file(self):
+        """large file downloaded correctly"""
+        self.conn.request("GET", "/httptest/wikipedia_russia.html")
+        r = self.conn.getresponse()
+        data = r.read()
+        length = r.getheader("Content-Length")
+        self.assertEqual(int(r.status), 200)
+        self.assertEqual(int(length), 954824)
+        self.assertEqual(len(data), 954824)
+        self.assertIn(b"Wikimedia Foundation, Inc.", data)
 
     def test_document_root_escaping(self):
         """document root escaping forbidden"""
@@ -80,6 +120,14 @@ class HttpServer(unittest.TestCase):
         self.assertEqual(int(r.status), 200)
         self.assertIn(b"hello", data)
         self.assertEqual(int(length), 5)
+
+    def test_post_method(self):
+        """post method forbidden"""
+        self.conn.request("POST", "/httptest/dir2/page.html")
+        r = self.conn.getresponse()
+        self.assertIn(int(r.status), (400, 405))
+
+    # TODO: test_head_method
 
     def test_filetype_html(self):
         """Content-Type for .html"""
