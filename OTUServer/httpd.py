@@ -21,15 +21,13 @@ class Server:
     def run(self):
         while True:
             client_socket, client_address = self.server_sock.accept()
+            self.request_handler(client_socket, client_address)
 
-            data = self.receive_data(client_socket)
-            if not data:
-                continue
-
+    def request_handler(self, client_socket, client_address):
+        data = self.receive_data(client_socket)
+        if data:
             response = Request(data, DOCUMENT_ROOT).get_response()
             print(data)
-
-            print("отправка данных")
             client_socket.sendall(response)
             client_socket.close()
 
