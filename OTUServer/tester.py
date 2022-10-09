@@ -1,4 +1,5 @@
 import http.client as httplib
+import socket
 import unittest
 
 
@@ -224,6 +225,13 @@ class HttpServer(unittest.TestCase):
         self.assertEqual(int(length), 35344)
         self.assertEqual(len(data), 35344)
         self.assertEqual(ctype, "application/x-shockwave-flash")
+
+    def test_empty_request(self):
+        """Send bad http headers"""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.host, self.port))
+        s.sendall(b"\n")
+        s.close()
 
 
 loader = unittest.TestLoader()
