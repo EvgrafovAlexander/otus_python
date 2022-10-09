@@ -8,7 +8,7 @@ from request import Request
 
 
 class Server:
-    def __init__(self, address, port, max_connections=1000):
+    def __init__(self, address: str, port: int, max_connections: int = 1000):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
@@ -32,7 +32,7 @@ class Server:
             thread.daemon = True
             thread.start()
 
-    def request_handler(self, client_socket, client_address):
+    def request_handler(self, client_socket: socket.socket, client_address: tuple) -> None:
         data = self.receive_data(client_socket)
         if data:
             response = Request(data, DOCUMENT_ROOT).get_response()
@@ -41,7 +41,7 @@ class Server:
             client_socket.close()
 
     @staticmethod
-    def receive_data(sock) -> bytes:
+    def receive_data(sock: socket.socket) -> bytes:
         response = b""
         sock.settimeout(0.01)
         try:

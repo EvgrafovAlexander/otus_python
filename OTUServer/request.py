@@ -21,7 +21,7 @@ class Request:
         ERROR_NOT_ALLOWED: "Method Not Allowed",
     }
 
-    def __init__(self, request_bytes: bytes, document_root):
+    def __init__(self, request_bytes: bytes, document_root: str):
         self.request_bytes = request_bytes
         self.document_root = document_root
 
@@ -74,12 +74,26 @@ class Request:
         return self._get_error_message(ERROR_NOT_FOUND)
 
     @staticmethod
-    def _prepare_query(query):
+    def _prepare_query(query: str) -> str:
+        """
+        Подготовка URL.
+
+        :param query: необработанный запрос
+        :return: предобработанный запрос
+        """
         query = urllib.parse.unquote(query)
         parsed_url = urllib.parse.urlparse(query)
         return parsed_url.path
 
     def _get_message(self, method: str, filepath: str, extension: str) -> bytes:
+        """
+        Формирование ответного сообщения.
+
+        :param method: метод запроса
+        :param filepath: путь до файла
+        :param extension: расширение файла
+        :return: сформированный ответ на запрос
+        """
         try:
             with open(filepath, "rb") as f:
                 content = f.read()
