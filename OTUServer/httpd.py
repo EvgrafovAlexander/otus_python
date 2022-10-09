@@ -7,7 +7,7 @@ from request import Request
 
 
 class Server:
-    def __init__(self, address, port, max_connections=5):
+    def __init__(self, address, port, max_connections=100):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
@@ -36,7 +36,7 @@ class Server:
     @staticmethod
     def receive_data(sock) -> bytes:
         response = b""
-        sock.settimeout(1)
+        sock.settimeout(0.01)
         try:
             while True:
                 chunk = sock.recv(4096)
