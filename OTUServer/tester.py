@@ -1,4 +1,5 @@
 import http.client as httplib
+import re
 import socket
 import unittest
 
@@ -232,6 +233,36 @@ class HttpServer(unittest.TestCase):
         s.connect((self.host, self.port))
         s.sendall(b"\n")
         s.close()
+
+    def test_head_method(self):
+        """head method support"""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.host, self.port))
+        s.send(b"HEAD /httptest/dir2/page.html HTTP/1.0\r\n\r\n")
+        data = b""
+        while 1:
+            buf = s.recv(1024)
+            if not buf:
+                break
+            data += buf
+        s.close()
+
+        self.assertTrue(data.find(b"\r\n\r\n") > 0, "no empty line with CRLF found")
+        (head, body) = re.split(b"\r\n\r\n", data, 1)
+        headers = head.split(b"\r\n")
+        self.assertTrue(len(headers) > 0, "no headers found")
+
+        statusline = headers.pop(0)
+        (proto, code, status) = statusline.split(b" ")
+        h = {}
+        for k, v in enumerate(headers):
+            (name, value) = re.split(b"\s*:\s*", v, 1)  # noqa
+            h[name] = value
+        if int(code) == 200:
+            self.assertEqual(int(h[b"Content-Length"]), 38)
+            self.assertEqual(len(body), 0)
+        else:
+            self.assertIn(int(code), (400, 405))
 
 
 loader = unittest.TestLoader()
