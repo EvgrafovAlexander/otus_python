@@ -1,13 +1,14 @@
 # stdlib
 import argparse
 import socket
+import threading
 
 # project
 from request import Request
 
 
 class Server:
-    def __init__(self, address, port, max_connections=100):
+    def __init__(self, address, port, max_connections=1000):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
@@ -21,7 +22,15 @@ class Server:
     def run(self):
         while True:
             client_socket, client_address = self.server_sock.accept()
-            self.request_handler(client_socket, client_address)
+            thread = threading.Thread(
+                target=self.request_handler,
+                args=(
+                    client_socket,
+                    client_address,
+                ),
+            )
+            thread.daemon = True
+            thread.start()
 
     def request_handler(self, client_socket, client_address):
         data = self.receive_data(client_socket)
