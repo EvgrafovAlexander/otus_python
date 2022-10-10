@@ -1,5 +1,32 @@
 # OTUServer
 
+Реализация web-сервера, частично реализующего протокол HTTP:
+- принимает к обработке GET/HEAD запросы;
+- реализована возможность передачи файлов по произвольному пути в
+DOCUMENT_ROOT (пример: http://localhost:9000/httptest/dir1/dir12/dir123/deep.txt);
+- DOCUMENT_ROOT задается при запуске сервера аргументом -r;
+- Если вместо имени файла указана директория, происходит передача файла index.html,
+находящегося в данной директории (пример: http://localhost:9000/httptest/dir2/);
+- В случае успещного запроса сервер возвращает ответ структурного вида:
+
+```
+HTTP/1.1 200 OK\r\n
+Date: Mon Oct 10 19:04:02 2022\r\n
+Server: Python 3.10\r\n
+Content-Length: 34\r\n
+Content-Type: text/html\r\n
+Connection: Closed\r\n\r\n
+<html>Directory index file</html>\n
+```
+
+- В случае возникновения ошибки ответ выглядит следующим образом:
+```
+HTTP/1.1 404 Not Found
+Date: Mon Oct 10 19:06:40 2022
+Server: Python 3.10
+Connection: Closed
+```
+
 ### Нагрузочное тестирование:
 1. Запустить сервер, выполнив ```httpd.py```;
 2. В консоли выполнить: 
