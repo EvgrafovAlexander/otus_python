@@ -1,5 +1,6 @@
 # stdlib
 import email
+import logging
 import mimetypes
 import os
 import urllib.parse
@@ -111,6 +112,7 @@ class Request:
                 message = str.encode(message)
                 if method == "GET":
                     message += content
+                logging.info("Response status: %s", str(CODE_OK))
                 return message
         except Exception:
             return self._get_error_message(ERROR_FORBIDDEN)
@@ -130,5 +132,5 @@ class Request:
             f"Server: Python 3.10\r\n"
             f"Connection: Closed\r\n\r\n"
         )
-
+        logging.error("Response error status: %s", str(error_code))
         return str.encode(error_message)
