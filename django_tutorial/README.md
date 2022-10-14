@@ -16,6 +16,14 @@ python3 manage.py check
 
 ### При необходимости добавления/изменения моделей:
 - Change your models (in models.py).
-- Run python manage.py makemigrations to create migrations for those changes
-- Run python manage.py migrate to apply those changes to the database.
+- Run python3 manage.py makemigrations to create migrations for those changes
+- Run python3 manage.py migrate to apply those changes to the database.
+
+### Запуск интерактивной оболочки
+python3 manage.py shell
+
+### Creating an admin user
+python3 manage.py createsuperuser
+
+admin admin@example.com admin
 
