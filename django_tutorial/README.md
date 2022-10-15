@@ -31,3 +31,12 @@ admin admin@example.com admin
 - Convert the URLconf.
 - Delete some of the old, unneeded views.
 - Introduce new views based on Django’s generic views.
+
+#### run tests
+python3 manage.py test polls
+
+
+#### Good rules-of-thumb include having:
+- a separate TestClass for each model or view
+- a separate test method for each set of conditions you want to test
+- test method names that describe their function
