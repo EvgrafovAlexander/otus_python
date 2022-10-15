@@ -27,3 +27,7 @@ python3 manage.py createsuperuser
 
 admin admin@example.com admin
 
+#### Use generic views:
+- Convert the URLconf.
+- Delete some of the old, unneeded views.
+- Introduce new views based on Django’s generic views.
