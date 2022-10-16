@@ -1,5 +1,6 @@
 #### Реализация index через HttpResponse
 
+```
 from django.template import loader
 
 def index(request):
@@ -9,9 +10,11 @@ def index(request):
         'latest_question_list': latest_question_list,
     }
     return HttpResponse(template.render(context, request))
+```
+ 
 
 #### Реализация detail через Http404
-
+```
 from django.http import Http404
 
 def detail(request, question_id):
@@ -20,9 +23,10 @@ def detail(request, question_id):
     except Question.DoesNotExist:
         raise Http404("Question does not exist")
     return render(request, 'polls/detail.html', {'question': question})
+```
 
 
-
+```
 urlpatterns = [
     # ex: /polls/
     path("", views.index, name="index"),
@@ -33,8 +37,10 @@ urlpatterns = [
     # ex: /polls/5/vote/
     path("<int:question_id>/vote/", views.vote, name="vote"),
 ]
+```
 
-
+#### Реализация без применения дженериков
+```
 def index(request):
     latest_question_list = Question.objects.order_by("-pub_date")[:5]
     context = {"latest_question_list": latest_question_list}
@@ -73,3 +79,4 @@ def vote(request, question_id):
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
         return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
+```
