@@ -21,3 +21,14 @@ class Question(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questions")
+    text = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answers")
+    pub_date = models.DateTimeField("published date", auto_now_add=True)
+    is_right = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.text

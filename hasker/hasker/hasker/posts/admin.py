@@ -1,6 +1,6 @@
-from django.contrib import admin  # noqa
+from django.contrib import admin
 
-from .models import Question, Tag
+from .models import Answer, Question, Tag
 
 
 # Register your models here.
@@ -16,5 +16,12 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ["name"]
 
 
+class TagAnswer(admin.ModelAdmin):
+    list_display = ("text",)
+    list_filter = ["text"]
+    search_fields = ["text"]
+
+
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Answer, TagAnswer)
