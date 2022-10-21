@@ -17,6 +17,7 @@ class Question(models.Model):
     text = models.TextField()
     pub_date = models.DateTimeField("published date", auto_now_add=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questions")
+    votes = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag)
 
     def __str__(self):
@@ -28,6 +29,7 @@ class Answer(models.Model):
     text = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answers")
     pub_date = models.DateTimeField("published date", auto_now_add=True)
+    votes = models.IntegerField(default=0)
     is_right = models.BooleanField(default=False)
 
     def __str__(self):
