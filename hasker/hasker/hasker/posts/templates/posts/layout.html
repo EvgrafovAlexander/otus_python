@@ -12,7 +12,22 @@
     <link rel="stylesheet" href="{% static 'posts/css/posts.css' %}">
 </head>
 <body>
-    {% block content %}
-    {% endblock %}
+     <div class="topnav">
+         <img src="{% static 'posts/img/hasker_image.png' %}" alt="Logo">
+      <a class="active" href="#home">Home</a>
+      <a href="#news">News</a>
+      <a href="#contact">Contact</a>
+      <a href="#about">About</a>
+    </div>
+
+     <aside>
+         <h3>Trending</h3>
+     </aside>
+
+     <main>
+         {% block content %}
+         {% endblock %}
+     </main>
+
 </body>
 </html>
