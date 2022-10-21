@@ -17,3 +17,14 @@ class IndexView(generic.ListView):
         lte = меньше или равно
         """
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:20]
+
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = "posts/detail.html"
+
+    def get_queryset(self):
+        """
+        Excludes any questions that aren't published yet.
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now())

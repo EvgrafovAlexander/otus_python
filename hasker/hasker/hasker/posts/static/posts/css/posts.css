@@ -41,3 +41,42 @@ aside {
     color: #ffa;
     border-left: 3px solid #95999c;
 }
+
+
+.shadowbox {
+  width: 25em;
+  border: 1px solid #333;
+  box-shadow: 8px 8px 5px #444;
+  padding: 12px 12px;
+  background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
+}
+
+ul {
+    list-style: none;
+    color: #000000;
+}
+
+h5 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+}
+
+a {
+    text-decoration: none;
+}
+a:after {
+	display: block;
+	position: static;
+	left: 0; /*изменить на right:0;, чтобы изменить направление подчёркивания */
+	width: 0;/*задаём длину линии до наведения курсора*/
+	height: 2px; /*задаём ширину линии*/
+	background-color: #7abaff; /*задаём цвет линии*/
+	content: "";
+	transition: width 0.3s ease-out; /*задаём время анимации*/
+}
+
+a:hover:after,
+a:focus:after {
+	width: 100%; /*устанавливаем значение 100%, чтобы ссылка подчёркивалась полностью*/
+}

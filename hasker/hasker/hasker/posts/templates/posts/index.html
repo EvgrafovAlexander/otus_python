@@ -3,13 +3,23 @@
 {% block title %}Главная страница{% endblock %}
 
 {% block content %}
-    <h1>Главная страница</h1>
-    <p>Главная страница</p>
+    <h2>Questions</h2><br>
 
     {% if latest_question_list %}
         <ul>
         {% for question in latest_question_list %}
-            {{ question.text }}
+            <div class="shadowbox">
+                <li><a href="{% url 'posts:detail' question.id %}"><h5>{{ question.title }}</h5></a></li>
+                <h7>{{ question.text }}</h7>
+                <br><br>
+                <h7>Author: {{ question.author }}, Rate: {{ question.votes }}</h7>
+
+                Tag: <br/>{% for tag in question.tag.all %}
+                    {{ tag.name }}<br/>
+                {% endfor %}
+
+            </div>
+            <h1></h1>
         {% endfor %}
         </ul>
     {% else %}
