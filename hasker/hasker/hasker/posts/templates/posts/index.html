@@ -1,9 +1,19 @@
-{% if latest_question_list %}
-    <ul>
-    {% for question in latest_question_list %}
-        {{ question.text }}
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No question are available.</p>
-{% endif %}
+{% extends 'posts/layout.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+    <h1>Главная страница</h1>
+    <p>Главная страница</p>
+
+    {% if latest_question_list %}
+        <ul>
+        {% for question in latest_question_list %}
+            {{ question.text }}
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No question are available.</p>
+    {% endif %}
+
+{% endblock %}
