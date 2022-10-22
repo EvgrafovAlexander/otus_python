@@ -14,10 +14,10 @@
 <body>
      <div class="topnav">
          <img src="{% static 'posts/img/hasker_image.png' %}" alt="Logo">
-      <a class="active" href="#home">Home</a>
+      <a class="active" href="{% url 'posts:index' %}">Главная</a>
       <a href="#news">News</a>
-      <a href="#contact">Contact</a>
-      <a href="#about">About</a>
+      <a href="{% url 'posts:add_question' %}">Задать вопрос</a>
+      <a href="{% url 'posts:register' %}">Регистрация</a> | <a href="{% url 'posts:login' %}">Войти</a>
     </div>
 
      <aside>
