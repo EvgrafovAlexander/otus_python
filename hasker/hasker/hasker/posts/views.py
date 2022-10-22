@@ -1,4 +1,4 @@
-from django.shortcuts import render  # noqa
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import generic
 
@@ -43,7 +43,12 @@ def add_question(request):
     if request.method == "POST":
         form = AddQuestionForm(request.POST)
         if form.is_valid():
-            print(form.cleaned_data)
+            try:
+                print(form.cleaned_data)
+                Question.objects.create(**form.cleaned_data)
+                return redirect("index")
+            except Exception:
+                form.add_error(None, "Не удалось добавить вопрос")
     else:
         form = AddQuestionForm()
     return render(request, "posts/add_question.html", {"form": form})
