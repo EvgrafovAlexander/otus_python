@@ -1,0 +1,15 @@
+{% extends 'posts/layout.html' %}
+
+{% block title %}Добавление вопроса{% endblock %}
+
+{% block content %}
+    <p>Содержимое страницы</p>
+
+    <form action="{% url "posts:add_question" %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Добавить</button>
+
+    </form>
+
+{% endblock %}

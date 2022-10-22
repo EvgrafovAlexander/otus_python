@@ -2,6 +2,7 @@ from django.shortcuts import render  # noqa
 from django.utils import timezone
 from django.views import generic
 
+from .forms import AddQuestionForm
 from .models import Question
 
 
@@ -39,4 +40,10 @@ def login(request):
 
 
 def add_question(request):
-    return None
+    if request.method == "POST":
+        form = AddQuestionForm(request.POST)
+        if form.is_valid():
+            print(form.cleaned_data)
+    else:
+        form = AddQuestionForm()
+    return render(request, "posts/add_question.html", {"form": form})
