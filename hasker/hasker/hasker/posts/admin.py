@@ -12,6 +12,7 @@ class QuestionAdmin(admin.ModelAdmin):
     list_display = ("title", "text", "pub_date", "author", "tags_list")
     list_filter = ["pub_date"]
     search_fields = ["title"]
+    filter_horizontal = ["tags"]
 
     def tags_list(self, obj):
         return "\n".join([t.name for t in obj.tags.all()])
