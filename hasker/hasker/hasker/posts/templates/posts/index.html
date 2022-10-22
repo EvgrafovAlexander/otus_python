@@ -14,8 +14,8 @@
                 <br><br>
                 <h7>Author: {{ question.author }}, Rate: {{ question.votes }}</h7>
 
-                Tag: <br/>{% for tag in question.tag.all %}
-                    {{ tag.name }}<br/>
+                Tag: {% for tag in question.tags.all %}
+                    {{ tag.name }}
                 {% endfor %}
 
             </div>
