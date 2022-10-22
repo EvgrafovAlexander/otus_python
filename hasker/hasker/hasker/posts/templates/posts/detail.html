@@ -1,0 +1,14 @@
+{% extends 'posts/layout.html' %}
+
+{% block title %}Question: {{ question.title }}{% endblock %}
+
+
+{% block content %}
+    <h3>{{ question.title }}</h3>
+    <h5>{{ question.text }}</h5>
+    <h5>{{ question.pub_date }}</h5>
+    <h5>Author: {{ question.author }}</h5>
+    <h5>Votes: {{ question.votes }}</h5>
+    <h5>Votes: {{ question.tags }}</h5>
+
+{% endblock %}
