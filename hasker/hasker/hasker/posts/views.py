@@ -44,10 +44,13 @@ def add_question(request):
         form = AddQuestionForm(request.POST)
         if form.is_valid():
             try:
-                print(form.cleaned_data)
-                Question.objects.create(**form.cleaned_data)
-                return redirect("index")
-            except Exception:
+                print("Сохранение вопроса")
+                question = form.save(commit=False)
+                question.author = request.user
+                question.save()
+                return redirect("posts:detail", pk=question.id)
+            except Exception as e:
+                print(e)
                 form.add_error(None, "Не удалось добавить вопрос")
     else:
         form = AddQuestionForm()
