@@ -2,7 +2,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import generic
 
-from .forms import AddQuestionForm
+from .forms import AddQuestionForm, RegisterUserForm
 from .models import Question
 
 
@@ -32,7 +32,22 @@ class DetailView(generic.DetailView):
 
 
 def register(request):
-    return render(request, "posts/register.html", {})
+    if request.method == "POST":
+        form = RegisterUserForm(request.POST)
+        if form.is_valid():
+            try:
+                print("Сохранение пользователя")
+                print(form.cleaned_data)
+                new_user = form.save(commit=False)
+                new_user.email = form.cleaned_data["email"]
+                new_user.save()
+                return redirect("posts:login")
+            except Exception as e:
+                print(e)
+                form.add_error(None, "Не удалось добавить пользователя")
+    else:
+        form = RegisterUserForm()
+    return render(request, "posts/register.html", {"form": form})
 
 
 def login(request):

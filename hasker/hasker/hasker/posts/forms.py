@@ -1,6 +1,11 @@
 from django import forms
+from django.apps import apps
+from django.contrib.auth.forms import UserCreationForm
 
 from .models import Question, Tag
+
+# from hasker.users.models import CustomUser
+CustomUser = apps.get_model("users", "CustomUser")
 
 
 class AddQuestionForm(forms.ModelForm):
@@ -12,3 +17,15 @@ class AddQuestionForm(forms.ModelForm):
         model = Question
         fields = "__all__"
         # fields = ["title", "text", "tags"]
+
+
+class RegisterUserForm(UserCreationForm):
+    username = forms.CharField(max_length=255, label="Никнейм")
+    password1 = forms.PasswordInput()
+    password2 = forms.PasswordInput()
+    email = forms.EmailField()
+
+    class Meta:
+        model = CustomUser
+        # fields = "__all__"
+        fields = ["username", "password1", "password2", "email"]
