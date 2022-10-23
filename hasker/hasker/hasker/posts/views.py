@@ -1,4 +1,4 @@
-from django.shortcuts import HttpResponse, redirect, render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import generic
 
@@ -32,11 +32,11 @@ class DetailView(generic.DetailView):
 
 
 def register(request):
-    return HttpResponse("Форма регистрации")
+    return render(request, "posts/register.html", {})
 
 
 def login(request):
-    return HttpResponse("Форма авторизации")
+    return render(request, "posts/login.html", {})
 
 
 def add_question(request):
