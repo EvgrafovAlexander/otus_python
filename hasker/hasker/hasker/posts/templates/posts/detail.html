@@ -14,4 +14,13 @@
         {{tag.name}}
     {% endfor %}
 
+    <br>
+    {% for answer in answers %}
+    <h5>{{ answer.text }}</h5>
+    <h5>{{ answer.author }}</h5>
+    <h5>{{ answer.pub_date }}</h5>
+    <h5>{{ answer.votes }}</h5>
+    <h5>{{ answer.is_right }}</h5>
+{% endfor %}
+
 {% endblock %}

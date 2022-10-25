@@ -9,7 +9,7 @@ urlpatterns = [
     # ex: /posts/
     path("", views.IndexView.as_view(), name="index"),
     # ex: /posts/5/
-    path("<int:pk>/", views.DetailView.as_view(), name="detail"),
+    path("<int:pk>/", views.question_view, name="detail"),
     # ex: /posts/register
     path("register/", views.register, name="register"),
     # ex: /posts/login

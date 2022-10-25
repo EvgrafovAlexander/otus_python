@@ -1,12 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import generic
 
 from .forms import AddQuestionForm, RegisterUserForm
-from .models import Question
+from .models import Answer, Question
 
 
 # Create your views here.
@@ -23,15 +23,10 @@ class IndexView(generic.ListView):
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:20]
 
 
-class DetailView(generic.DetailView):
-    model = Question
-    template_name = "posts/detail.html"
-
-    def get_queryset(self):
-        """
-        Excludes any questions that aren't published yet.
-        """
-        return Question.objects.filter(pub_date__lte=timezone.now())
+def question_view(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    answers = Answer.objects.filter(question__pk=pk)
+    return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
 def register(request):
