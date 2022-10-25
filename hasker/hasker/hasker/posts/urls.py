@@ -13,7 +13,7 @@ urlpatterns = [
     # ex: /posts/register
     path("register/", views.register, name="register"),
     # ex: /posts/login
-    path("login/", views.login, name="login"),
+    path("login/", views.login_view, name="login"),
     # ex: /posts/logout
     path("logout/", LogoutView.as_view(), {"next_page": settings.LOGOUT_REDIRECT_URL}, name="logout"),
     # ex: /posts/add_question
