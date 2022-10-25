@@ -24,8 +24,9 @@ class RegisterUserForm(UserCreationForm):
     password1 = forms.PasswordInput()
     password2 = forms.PasswordInput()
     email = forms.EmailField()
+    avatar = forms.ImageField()
 
     class Meta:
         model = CustomUser
         # fields = "__all__"
-        fields = ["username", "password1", "password2", "email"]
+        fields = ["username", "password1", "password2", "email", "avatar"]

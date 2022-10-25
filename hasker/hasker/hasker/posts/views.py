@@ -33,13 +33,14 @@ class DetailView(generic.DetailView):
 
 def register(request):
     if request.method == "POST":
-        form = RegisterUserForm(request.POST)
+        form = RegisterUserForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 print("Сохранение пользователя")
                 print(form.cleaned_data)
                 new_user = form.save(commit=False)
                 new_user.email = form.cleaned_data["email"]
+                new_user.avatar = form.cleaned_data["avatar"]
                 new_user.save()
                 return redirect("posts:login")
             except Exception as e:
