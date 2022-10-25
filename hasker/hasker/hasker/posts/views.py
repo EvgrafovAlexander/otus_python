@@ -94,6 +94,7 @@ def add_answer(request, pk):
                 print("Сохранение ответа")
                 answer = form.save(commit=False)
                 answer.author = request.user
+                answer.question_id = pk
                 answer.save()
                 return redirect("posts:detail", pk=pk)
             except Exception as e:
@@ -101,4 +102,4 @@ def add_answer(request, pk):
                 form.add_error(None, "Не удалось добавить вопрос")
     else:
         form = AddAnswerForm()
-    return render(request, "posts/add_answer.html", {"form": form})
+    return render(request, "posts/add_answer.html", {"form": form, "pk": pk})
