@@ -15,8 +15,7 @@ class AddQuestionForm(forms.ModelForm):
 
     class Meta:
         model = Question
-        fields = "__all__"
-        # fields = ["title", "text", "tags"]
+        fields = ["title", "text", "tags"]
 
 
 class RegisterUserForm(UserCreationForm):
@@ -28,5 +27,5 @@ class RegisterUserForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        # fields = "__all__"
+        # Для отображения всех полей: fields = "__all__"
         fields = ["username", "password1", "password2", "email", "avatar"]
