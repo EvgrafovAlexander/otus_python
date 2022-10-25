@@ -18,4 +18,6 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), {"next_page": settings.LOGOUT_REDIRECT_URL}, name="logout"),
     # ex: /posts/add_question
     path("add_question/", views.add_question, name="add_question"),
+    # ex: /posts/add_answer
+    path("<int:pk>/add_answer/", views.add_answer, name="add_answer"),
 ]

@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import generic
 
-from .forms import AddQuestionForm, RegisterUserForm
+from .forms import AddAnswerForm, AddQuestionForm, RegisterUserForm
 from .models import Answer, Question
 
 
@@ -84,3 +84,21 @@ def add_question(request):
     else:
         form = AddQuestionForm()
     return render(request, "posts/add_question.html", {"form": form})
+
+
+def add_answer(request, pk):
+    if request.method == "POST":
+        form = AddAnswerForm(request.POST)
+        if form.is_valid():
+            try:
+                print("Сохранение ответа")
+                answer = form.save(commit=False)
+                answer.author = request.user
+                answer.save()
+                return redirect("posts:detail", pk=pk)
+            except Exception as e:
+                print(e)
+                form.add_error(None, "Не удалось добавить вопрос")
+    else:
+        form = AddAnswerForm()
+    return render(request, "posts/add_answer.html", {"form": form})

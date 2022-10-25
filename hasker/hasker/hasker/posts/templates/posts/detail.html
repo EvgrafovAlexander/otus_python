@@ -14,7 +14,15 @@
     {% for tag in question.tags.all %}
         {{tag.name}}
     {% endfor %}
-    </div>
+</div>
+
+{% if user.is_authenticated %}
+          <a href="{% url 'posts:add_answer' question.id %}">
+              <button type="button" class="btn btn-outline-primary">Ответить
+              </button>
+          </a>
+{% else %}
+{% endif %}
 
     <br>
     {% for answer in answers %}
