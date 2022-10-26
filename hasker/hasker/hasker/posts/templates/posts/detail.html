@@ -33,10 +33,13 @@
         <h5>{{ answer.votes }}</h5>
         <h5>{{ answer.is_right }}</h5>
 
+{% if user.is_authenticated %}
         <div class="btn-group">
           <button type="button" class="btn btn-primary">+</button>
           <button type="button" class="btn btn-primary">-</button>
         </div>
+{% else %}
+{% endif %}
 
     </div>
     {% endfor %}
