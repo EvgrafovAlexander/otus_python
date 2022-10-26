@@ -103,3 +103,16 @@ def add_answer(request, pk):
     else:
         form = AddAnswerForm()
     return render(request, "posts/add_answer.html", {"form": form, "pk": pk})
+
+
+def change_rate(request, pk_question, pk_answer, vote):
+    question = get_object_or_404(Question, pk=pk_question)
+    answer = get_object_or_404(Answer, pk=pk_answer)
+    votes = answer.votes
+    if vote == "inc":
+        votes += 1
+    elif vote == "dec":
+        votes -= 1
+    Answer.objects.filter(pk=pk_answer).update(votes=votes)
+    answers = Answer.objects.filter(question__pk=pk_question)
+    return render(request, "posts/detail.html", {"question": question, "answers": answers})
