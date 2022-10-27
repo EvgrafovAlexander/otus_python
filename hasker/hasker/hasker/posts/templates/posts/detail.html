@@ -40,7 +40,17 @@
         <h5>{{ answer.author }}</h5>
         <h5>{{ answer.pub_date }}</h5>
         <h5>{{ answer.votes }}</h5>
-        <h5>{{ answer.is_right }}</h5>
+
+        {% if answer.is_right %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked disabled>
+              <label class="form-check-label" for="flexCheckChecked">
+                Лучший ответ!
+              </label>
+            </div>
+        {% else %}
+            <p>Не лучший ответ</p>
+        {% endif %}
 
 {% if user.is_authenticated %}
         <div class="btn-group">
