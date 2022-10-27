@@ -14,15 +14,24 @@
     {% for tag in question.tags.all %}
         {{tag.name}}
     {% endfor %}
-</div>
 
 {% if user.is_authenticated %}
-          <a href="{% url 'posts:add_answer' question.id %}">
-              <button type="button" class="btn btn-outline-primary">Ответить
-              </button>
+    <a href="{% url 'posts:add_answer' question.id %}">
+       <button type="button" class="btn-outline-light">Ответить
+       </button>
+    </a>
+
+    <div class="btn-group">
+          <a href="{% url 'posts:change_question_rate' question.id 'inc' %}">
+              <button type="button" class="btn-outline-light">+</button>
           </a>
+          <a href="{% url 'posts:change_question_rate' question.id 'dec' %}">
+              <button type="button" class="btn-outline-light">-</button>
+          </a>
+    </div>
 {% else %}
 {% endif %}
+</div>
 
     <br>
     {% for answer in answers %}
