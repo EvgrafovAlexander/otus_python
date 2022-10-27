@@ -19,6 +19,7 @@ class Question(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questions")
     votes = models.IntegerField(default=0)
     tags = models.ManyToManyField(Tag, related_name="tag")
+    found_answer = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title

@@ -128,3 +128,11 @@ def change_question_rate(request, pk_question, vote):
     Question.objects.filter(pk=pk_question).update(votes=votes)
     answers = Answer.objects.filter(question__pk=pk_question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
+
+
+def choose_the_best(request, pk_question, pk_answer):
+    Question.objects.filter(pk=pk_question).update(found_answer=True)
+    Answer.objects.filter(pk=pk_answer).update(is_right=True)
+    question = get_object_or_404(Question, pk=pk_question)
+    answers = Answer.objects.filter(question__pk=pk_question)
+    return render(request, "posts/detail.html", {"question": question, "answers": answers})

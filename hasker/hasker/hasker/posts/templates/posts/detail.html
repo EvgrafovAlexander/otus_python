@@ -49,7 +49,6 @@
               </label>
             </div>
         {% else %}
-            <p>Не лучший ответ</p>
         {% endif %}
 
 {% if user.is_authenticated %}
@@ -61,6 +60,16 @@
               <button type="button" class="btn btn-primary">-</button>
           </a>
         </div>
+
+{% if user == question.author and not question.found_answer%}
+         <a href="{% url 'posts:choose_the_best' question.id answer.id %}">
+           <button type="button" class="btn-outline-light">Выбрать лучшим!
+           </button>
+        </a>
+{% else %}
+{% endif %}
+
+
 {% else %}
 {% endif %}
 
