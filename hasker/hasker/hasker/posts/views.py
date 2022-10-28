@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import generic
@@ -36,6 +37,18 @@ class IndexViewHot(generic.ListView):
         lte = меньше или равно
         """
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-votes")
+
+
+class SearchResultsList(generic.ListView):
+    model = Question
+    context_object_name = "latest_question_list"
+    template_name = "posts/index.html"
+
+    def get_queryset(self):
+        query = self.request.GET.get("q")
+        return Question.objects.filter(
+            Q(title__icontains=query) | Q(text__icontains=query) | Q(title__iexact=query) | Q(text__iexact=query)
+        ).order_by("-votes", "-pub_date")
 
 
 def question_view(request, pk):

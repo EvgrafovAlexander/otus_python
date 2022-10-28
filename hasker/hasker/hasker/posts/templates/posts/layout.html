@@ -23,6 +23,16 @@
       {% else %}
           <a href="{% url 'posts:register' %}">Регистрация</a> | <a href="{% url 'posts:login' %}">Войти</a>
       {% endif %}
+
+    <form action="{% url 'posts:search_results' %}" method="get">
+      <input
+        type="search"
+        name="q"
+        placeholder="Search by questions..."
+        class="form-control"
+      />
+    </form>
+
     </div>
 
      <aside>
