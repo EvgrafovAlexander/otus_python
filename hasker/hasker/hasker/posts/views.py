@@ -10,7 +10,7 @@ from .models import Answer, AnswerHistoryVote, Question, QuestionHistoryVote
 
 
 # Create your views here.
-class IndexView(generic.ListView):
+class IndexViewLast(generic.ListView):
     template_name = "posts/index.html"
     context_object_name = "latest_question_list"
     paginate_by = 2
@@ -21,7 +21,21 @@ class IndexView(generic.ListView):
 
         lte = меньше или равно
         """
-        return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:20]
+        return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")
+
+
+class IndexViewHot(generic.ListView):
+    template_name = "posts/index.html"
+    context_object_name = "latest_question_list"
+    paginate_by = 2
+
+    def get_queryset(self):
+        """
+        Получить набор из вопросов, сортированных по дате публикации
+
+        lte = меньше или равно
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-votes")
 
 
 def question_view(request, pk):

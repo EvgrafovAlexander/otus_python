@@ -7,7 +7,9 @@ from . import views
 app_name = "posts"
 urlpatterns = [
     # ex: /posts/
-    path("", views.IndexView.as_view(), name="index"),
+    path("", views.IndexViewLast.as_view(), name="index"),
+    # ex: /posts/hot/
+    path("hot/", views.IndexViewHot.as_view(), name="index_hot"),
     # ex: /posts/5/
     path("<int:pk>/", views.question_view, name="detail"),
     # ex: /posts/register
