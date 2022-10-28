@@ -21,6 +21,12 @@
           <a href="{% url 'posts:add_question' %}">Задать вопрос</a>
           <a href="{% url 'posts:logout' %}">Выйти</a>
           <p>User: {{ user.username }}</p>
+
+         {% if user.avatar %}
+         <div class="float-end"><img src="{{ user.avatar.url }}" class="img-fluid"></div><br>
+
+         {% endif %}
+
       {% else %}
           <a href="{% url 'posts:register' %}">Регистрация</a> | <a href="{% url 'posts:login' %}">Войти</a>
       {% endif %}

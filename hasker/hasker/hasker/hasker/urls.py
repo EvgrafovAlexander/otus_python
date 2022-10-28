@@ -19,8 +19,12 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
-urlpatterns = [
-    path("", RedirectView.as_view(url="posts")),
-    path("posts/", include("posts.urls")),
-    path("admin/", admin.site.urls),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns = (
+    [
+        path("", RedirectView.as_view(url="posts")),
+        path("posts/", include("posts.urls")),
+        path("admin/", admin.site.urls),
+    ]
+    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+)
