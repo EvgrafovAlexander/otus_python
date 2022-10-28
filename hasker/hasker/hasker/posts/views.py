@@ -13,6 +13,7 @@ from .models import Answer, AnswerHistoryVote, Question, QuestionHistoryVote
 class IndexView(generic.ListView):
     template_name = "posts/index.html"
     context_object_name = "latest_question_list"
+    paginate_by = 2
 
     def get_queryset(self):
         """
