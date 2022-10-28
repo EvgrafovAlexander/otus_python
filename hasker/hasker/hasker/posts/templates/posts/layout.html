@@ -1,4 +1,5 @@
 {% load static %}
+{% load posts_tags %}
 
 <!doctype html>
 <html lang="ru">
@@ -37,6 +38,14 @@
 
      <aside>
          <h3>Trending</h3>
+         {% get_most_rate_questions as most_rate_questions %}
+         {% for question in most_rate_questions %}
+            <div class="shadowbox">
+                <li><a href="{% url 'posts:detail' question.id %}"><h5>Rate: {{ question.votes }} {{ question.title }}
+                </h5></a></li>
+            </div>
+         {% endfor %}
+
      </aside>
 
      <main>
