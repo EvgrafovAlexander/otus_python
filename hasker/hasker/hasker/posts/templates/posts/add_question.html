@@ -3,7 +3,6 @@
 {% block title %}Добавление вопроса{% endblock %}
 
 {% block content %}
-    <p>Содержимое страницы</p>
 
     <form action="{% url "posts:add_question" %}" method="post">
     {% csrf_token %}
