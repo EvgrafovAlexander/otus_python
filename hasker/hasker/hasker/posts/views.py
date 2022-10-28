@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views import generic
 
 from .forms import AddAnswerForm, AddQuestionForm, RegisterUserForm
-from .models import Answer, Question
+from .models import Answer, AnswerHistoryVote, Question
 
 
 # Create your views here.
@@ -106,14 +106,21 @@ def add_answer(request, pk):
 
 
 def change_rate(request, pk_question, pk_answer, vote):
+    already_vote = AnswerHistoryVote.objects.filter(user=request.user).filter(answer_id=pk_answer)
     question = get_object_or_404(Question, pk=pk_question)
     answer = get_object_or_404(Answer, pk=pk_answer)
-    votes = answer.votes
-    if vote == "inc":
-        votes += 1
-    elif vote == "dec":
-        votes -= 1
-    Answer.objects.filter(pk=pk_answer).update(votes=votes)
+    if not already_vote:
+        votes = answer.votes
+        if vote == "inc":
+            votes += 1
+        elif vote == "dec":
+            votes -= 1
+        Answer.objects.filter(pk=pk_answer).update(votes=votes)
+        # Добавляем информацию о голосовании пользователя
+        vote = AnswerHistoryVote(user=request.user, answer_id=pk_answer)
+        vote.save()
+    else:
+        messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
     answers = Answer.objects.filter(question__pk=pk_question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 

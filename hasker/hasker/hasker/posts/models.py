@@ -12,6 +12,16 @@ class Tag(models.Model):
         return self.name
 
 
+class QuestionHistoryVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_votes")
+    question_id = models.IntegerField()
+
+
+class AnswerHistoryVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answer_votes")
+    answer_id = models.IntegerField()
+
+
 class Question(models.Model):
     title = models.TextField()
     text = models.TextField()

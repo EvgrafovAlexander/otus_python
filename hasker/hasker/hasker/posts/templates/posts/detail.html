@@ -4,6 +4,16 @@
 
 
 {% block content %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+
 <div class="container p-3 my-3 bg-primary text-white">
     <h3>{{ question.title }}</h3>
     <h5>{{ question.text }}</h5>
