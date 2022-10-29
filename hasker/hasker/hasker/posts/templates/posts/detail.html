@@ -40,6 +40,14 @@
               <button type="button" class="btn-outline-light">-</button>
           </a>
     </div>
+
+    {% if question.already_vote %}
+             <a href="">
+               <button type="button" class="btn-outline-light">Отменить голос
+               </button>
+            </a>
+    {% else %}
+    {% endif %}
 {% else %}
 {% endif %}
 </div>

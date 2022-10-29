@@ -53,6 +53,7 @@ class SearchResultsList(generic.ListView):
 
 def question_view(request, pk):
     question = get_object_or_404(Question, pk=pk)
+    question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
@@ -134,9 +135,10 @@ def add_answer(request, pk):
 
 
 def change_rate(request, pk_question, pk_answer, vote):
-    already_vote = AnswerVote.objects.filter(user=request.user).filter(answer_id=pk_answer)
     question = get_object_or_404(Question, pk=pk_question)
+    question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answer = get_object_or_404(Answer, pk=pk_answer)
+    already_vote = AnswerVote.objects.filter(user=request.user).filter(answer=answer)
     if not already_vote:
         votes = answer.votes
         if vote == "inc":
@@ -145,7 +147,7 @@ def change_rate(request, pk_question, pk_answer, vote):
             votes -= 1
         Answer.objects.filter(pk=pk_answer).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = AnswerVote(user=request.user, answer_id=pk_answer)
+        vote = AnswerVote(user=request.user, answer=answer)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
@@ -154,8 +156,9 @@ def change_rate(request, pk_question, pk_answer, vote):
 
 
 def change_question_rate(request, pk_question, vote):
-    already_vote = QuestionVote.objects.filter(user=request.user).filter(question_id=pk_question)
     question = get_object_or_404(Question, pk=pk_question)
+    question.already_vote = QuestionVote.objects.filter(question=question).exists()
+    already_vote = QuestionVote.objects.filter(user=request.user).filter(question=question)
     if not already_vote:
         votes = question.votes
         if vote == "inc":
@@ -164,7 +167,7 @@ def change_question_rate(request, pk_question, vote):
             votes -= 1
         Question.objects.filter(pk=pk_question).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = QuestionVote(user=request.user, question_id=pk_question)
+        vote = QuestionVote(user=request.user, question=question)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
@@ -177,5 +180,6 @@ def choose_the_best(request, pk_question, pk_answer):
     Question.objects.filter(pk=pk_question).update(found_answer=True)
     Answer.objects.filter(pk=pk_answer).update(is_right=True)
     question = get_object_or_404(Question, pk=pk_question)
+    question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
