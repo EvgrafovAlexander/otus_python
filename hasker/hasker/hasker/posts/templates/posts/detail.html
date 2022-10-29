@@ -80,6 +80,13 @@
         {% else %}
         {% endif %}
 
+        {% if answer.already_vote %}
+                 <a href="">
+                   <button type="button" class="btn-outline-light">Отменить голос
+                   </button>
+                </a>
+        {% else %}
+        {% endif %}
 
 {% else %}
 {% endif %}

@@ -31,12 +31,19 @@ class QuestionVote(models.Model):
 
 
 class Answer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questions")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answers")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="authors")
     pub_date = models.DateTimeField("published date", auto_now_add=True)
     votes = models.IntegerField(default=0)
     is_right = models.BooleanField(default=False)
+
+    @staticmethod
+    def get_answers(question):
+        answers = question.answers.all()
+        for answer in answers:
+            answer.already_vote = AnswerVote.objects.filter(answer=answer).exists()
+        return answers
 
     def __str__(self):
         return self.text

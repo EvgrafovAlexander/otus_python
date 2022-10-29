@@ -53,7 +53,7 @@ class SearchResultsList(generic.ListView):
 
 def question_view(request, pk):
     question = get_object_or_404(Question, pk=pk)
-    answers = Answer.objects.filter(question__pk=pk)
+    answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
@@ -149,7 +149,7 @@ def change_rate(request, pk_question, pk_answer, vote):
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
-    answers = Answer.objects.filter(question__pk=pk_question)
+    answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
@@ -168,13 +168,14 @@ def change_question_rate(request, pk_question, vote):
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
-    answers = Answer.objects.filter(question__pk=pk_question)
+    answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
 def choose_the_best(request, pk_question, pk_answer):
+    """Выбрать наилучший ответ"""
     Question.objects.filter(pk=pk_question).update(found_answer=True)
     Answer.objects.filter(pk=pk_answer).update(is_right=True)
     question = get_object_or_404(Question, pk=pk_question)
-    answers = Answer.objects.filter(question__pk=pk_question)
+    answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
