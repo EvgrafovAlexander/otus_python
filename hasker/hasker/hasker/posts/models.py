@@ -12,16 +12,6 @@ class Tag(models.Model):
         return self.name
 
 
-class QuestionHistoryVote(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_votes")
-    question_id = models.IntegerField()
-
-
-class AnswerHistoryVote(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="answer_votes")
-    answer_id = models.IntegerField()
-
-
 class Question(models.Model):
     title = models.TextField()
     text = models.TextField()
@@ -35,6 +25,11 @@ class Question(models.Model):
         return self.title
 
 
+class QuestionVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="qh_user")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="qh_question")
+
+
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questions")
     text = models.TextField()
@@ -45,3 +40,8 @@ class Answer(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class AnswerVote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="aq_user")
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name="aq_answer")

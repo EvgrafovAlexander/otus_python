@@ -1,6 +1,8 @@
+# flake8: noqa: F401
+
 from django.contrib import admin
 
-from .models import Answer, Question, Tag
+from .models import Answer, AnswerVote, Question, QuestionVote, Tag
 
 
 # Register your models here.
@@ -28,12 +30,22 @@ class TagAdmin(admin.ModelAdmin):
     ]
 
 
-class TagAnswer(admin.ModelAdmin):
+class AnswerAdmin(admin.ModelAdmin):
     list_display = ("text",)
     list_filter = ["text"]
     search_fields = ["text"]
 
 
+class QuestionVoteAdmin(admin.ModelAdmin):
+    list_display = ("user", "question")
+
+
+class AnswerVoteAdmin(admin.ModelAdmin):
+    list_display = ("user", "answer")
+
+
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Tag, TagAdmin)
-admin.site.register(Answer, TagAnswer)
+admin.site.register(Answer, AnswerAdmin)
+admin.site.register(AnswerVote, AnswerVoteAdmin)
+admin.site.register(QuestionVote, QuestionVoteAdmin)

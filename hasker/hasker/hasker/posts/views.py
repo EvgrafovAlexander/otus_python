@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views import generic
 
 from .forms import AddAnswerForm, AddQuestionForm, RegisterUserForm
-from .models import Answer, AnswerHistoryVote, Question, QuestionHistoryVote
+from .models import Answer, AnswerVote, Question, QuestionVote
 
 
 # Create your views here.
@@ -134,7 +134,7 @@ def add_answer(request, pk):
 
 
 def change_rate(request, pk_question, pk_answer, vote):
-    already_vote = AnswerHistoryVote.objects.filter(user=request.user).filter(answer_id=pk_answer)
+    already_vote = AnswerVote.objects.filter(user=request.user).filter(answer_id=pk_answer)
     question = get_object_or_404(Question, pk=pk_question)
     answer = get_object_or_404(Answer, pk=pk_answer)
     if not already_vote:
@@ -145,7 +145,7 @@ def change_rate(request, pk_question, pk_answer, vote):
             votes -= 1
         Answer.objects.filter(pk=pk_answer).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = AnswerHistoryVote(user=request.user, answer_id=pk_answer)
+        vote = AnswerVote(user=request.user, answer_id=pk_answer)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
@@ -154,7 +154,7 @@ def change_rate(request, pk_question, pk_answer, vote):
 
 
 def change_question_rate(request, pk_question, vote):
-    already_vote = QuestionHistoryVote.objects.filter(user=request.user).filter(question_id=pk_question)
+    already_vote = QuestionVote.objects.filter(user=request.user).filter(question_id=pk_question)
     question = get_object_or_404(Question, pk=pk_question)
     if not already_vote:
         votes = question.votes
@@ -164,7 +164,7 @@ def change_question_rate(request, pk_question, vote):
             votes -= 1
         Question.objects.filter(pk=pk_question).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = QuestionHistoryVote(user=request.user, question_id=pk_question)
+        vote = QuestionVote(user=request.user, question_id=pk_question)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
