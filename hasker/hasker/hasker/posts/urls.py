@@ -32,6 +32,6 @@ urlpatterns = [
     path("cancel_answer_vote/", views.cancel_answer_vote, name="cancel_answer_vote"),
     # ex: /posts/cancel_question_vote/
     path("cancel_question_vote/", views.cancel_question_vote, name="cancel_question_vote"),
-    # ex: /posts/5/change_rate/1
+    # ex: /posts/5/choose_the_best/1
     path("<int:pk_question>/choose_the_best/<int:pk_answer>", views.choose_the_best, name="choose_the_best"),
 ]
