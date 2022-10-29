@@ -56,9 +56,9 @@
             <button class="btn-outline-light" type="submit">Отменить голос</button>
             </form>
         </div>
-
     {% else %}
     {% endif %}
+
 {% else %}
 {% endif %}
 </div>
@@ -109,10 +109,14 @@
         {% endif %}
 
         {% if answer.already_vote %}
-                 <a href="">
-                   <button type="button" class="btn-outline-light">Отменить голос
-                   </button>
-                </a>
+            <div class="btn-group">
+                <form method="post" action="{% url 'posts:cancel_answer_vote' %}">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" value="{{question.id}}">
+                <input type="hidden" name="answer_id" value="{{answer.id}}">
+                <button class="btn-outline-light" type="submit">Отменить голос</button>
+                </form>
+            </div>
         {% else %}
         {% endif %}
 

@@ -171,7 +171,7 @@ def change_question_rate(request):
         vote = QuestionVote(user=request.user, question=question, is_plus=is_plus)
         vote.save()
     else:
-        messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
+        messages.error(request, "Для повторного голосования отмените свой голос.")
     answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
@@ -187,7 +187,19 @@ def choose_the_best(request, pk_question, pk_answer):
 
 
 def cancel_answer_vote(request):
-    pass
+    pk_question = request.POST.get("question_id")
+    pk_answer = request.POST.get("answer_id")
+
+    votes = AnswerVote.objects.filter(user=request.user).filter(answer_id=pk_answer)
+    roll_vote = 1 if votes[0].is_plus else -1
+    votes.delete()
+    answer = get_object_or_404(Answer, pk=pk_answer)
+    votes_update = answer.votes - roll_vote
+    Answer.objects.filter(pk=pk_answer).update(votes=votes_update)
+
+    question = get_object_or_404(Question, pk=pk_question)
+    answers = Answer.get_answers(question)
+    return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
 def cancel_question_vote(request):
@@ -195,12 +207,9 @@ def cancel_question_vote(request):
 
     votes = QuestionVote.objects.filter(user=request.user).filter(question_id=pk_question)
     roll_vote = 1 if votes[0].is_plus else -1
-    print("roll", roll_vote)
     votes.delete()
     question = get_object_or_404(Question, pk=pk_question)
-    print("votes_old", question.votes)
     votes_update = question.votes - roll_vote
-    print("votes_new", votes_update)
     Question.objects.filter(pk=pk_question).update(votes=votes_update)
 
     question = get_object_or_404(Question, pk=pk_question)
