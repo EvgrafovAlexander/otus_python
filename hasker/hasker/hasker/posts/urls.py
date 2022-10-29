@@ -24,8 +24,8 @@ urlpatterns = [
     path("add_question/", views.add_question, name="add_question"),
     # ex: /posts/5/add_answer
     path("<int:pk>/add_answer/", views.add_answer, name="add_answer"),
-    # ex: /posts/5/change_rate/1
-    path("<int:pk_question>/change_rate/<int:pk_answer>/<str:vote>", views.change_rate, name="change_rate"),
+    # ex: change_rate/
+    path("change_rate/", views.change_rate, name="change_rate"),
     # ex: /posts/5/change_rate/1
     path("<int:pk_question>/change_question_rate/<str:vote>", views.change_question_rate, name="change_question_rate"),
     # ex: /posts/5/change_rate/1
