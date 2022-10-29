@@ -28,6 +28,10 @@ urlpatterns = [
     path("change_answer_rate/", views.change_answer_rate, name="change_answer_rate"),
     # ex: /posts/change_question_rate/
     path("change_question_rate/", views.change_question_rate, name="change_question_rate"),
+    # ex: /posts/cancel_answer_vote/
+    path("cancel_answer_vote/", views.cancel_answer_vote, name="cancel_answer_vote"),
+    # ex: /posts/cancel_question_vote/
+    path("cancel_question_vote/", views.cancel_question_vote, name="cancel_question_vote"),
     # ex: /posts/5/change_rate/1
     path("<int:pk_question>/choose_the_best/<int:pk_answer>", views.choose_the_best, name="choose_the_best"),
 ]

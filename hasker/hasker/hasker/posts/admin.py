@@ -37,11 +37,11 @@ class AnswerAdmin(admin.ModelAdmin):
 
 
 class QuestionVoteAdmin(admin.ModelAdmin):
-    list_display = ("user", "question")
+    list_display = ("user", "question", "is_plus")
 
 
 class AnswerVoteAdmin(admin.ModelAdmin):
-    list_display = ("user", "answer")
+    list_display = ("user", "answer", "is_plus")
 
 
 admin.site.register(Question, QuestionAdmin)
