@@ -101,10 +101,10 @@ def add_question(request):
         form = AddQuestionForm(request.POST)
         if form.is_valid():
             try:
-                print("Сохранение вопроса")
                 question = form.save(commit=False)
                 question.author = request.user
                 question.save()
+                form.save_m2m()
                 return redirect("posts:detail", pk=question.id)
             except Exception as e:
                 print(e)
