@@ -32,14 +32,21 @@
        </button>
     </a>
 
-    <div class="btn-group">
-          <a href="{% url 'posts:change_question_rate' question.id 'inc' %}">
-              <button type="button" class="btn-outline-light">+</button>
-          </a>
-          <a href="{% url 'posts:change_question_rate' question.id 'dec' %}">
-              <button type="button" class="btn-outline-light">-</button>
-          </a>
-    </div>
+        <div class="btn-group">
+            <form method="post" action="{% url 'posts:change_question_rate' %}">
+            {% csrf_token %}
+            <input type="hidden" name="question_id" value="{{question.id}}">
+            <input type="hidden" name="vote" value="inc">
+            <button class="btn-outline-light" type="submit">+</button>
+            </form>
+
+            <form method="post" action="{% url 'posts:change_question_rate' %}">
+            {% csrf_token %}
+            <input type="hidden" name="question_id" value="{{question.id}}">
+            <input type="hidden" name="vote" value="dec">
+            <button class="btn-outline-light" type="submit">-</button>
+            </form>
+        </div>
 
     {% if question.already_vote %}
              <a href="">
@@ -72,7 +79,7 @@
 
 {% if user.is_authenticated %}
         <div class="btn-group">
-            <form method="post" action="{% url 'posts:change_rate' %}">
+            <form method="post" action="{% url 'posts:change_answer_rate' %}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
             <input type="hidden" name="answer_id" value="{{answer.id}}">
@@ -80,7 +87,7 @@
             <button class="btn btn-primary" type="submit">+</button>
             </form>
 
-            <form method="post" action="{% url 'posts:change_rate' %}">
+            <form method="post" action="{% url 'posts:change_answer_rate' %}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
             <input type="hidden" name="answer_id" value="{{answer.id}}">

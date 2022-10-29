@@ -134,7 +134,7 @@ def add_answer(request, pk):
     return render(request, "posts/add_answer.html", {"form": form, "pk": pk})
 
 
-def change_rate(request):
+def change_answer_rate(request):
     pk_question = request.POST.get("question_id")
     pk_answer = request.POST.get("answer_id")
     vote = request.POST.get("vote")
@@ -160,7 +160,10 @@ def change_rate(request):
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
-def change_question_rate(request, pk_question, vote):
+def change_question_rate(request):
+    pk_question = request.POST.get("question_id")
+    vote = request.POST.get("vote")
+
     question = get_object_or_404(Question, pk=pk_question)
     question.already_vote = QuestionVote.objects.filter(question=question).exists()
     already_vote = QuestionVote.objects.filter(user=request.user).filter(question=question)
