@@ -137,43 +137,35 @@ def add_answer(request, pk):
 def change_answer_rate(request):
     pk_question = request.POST.get("question_id")
     pk_answer = request.POST.get("answer_id")
-    vote = request.POST.get("vote")
+    vote = int(request.POST.get("vote"))
 
     question = get_object_or_404(Question, pk=pk_question)
     question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answer = get_object_or_404(Answer, pk=pk_answer)
     already_vote = AnswerVote.objects.filter(user=request.user).filter(answer=answer)
     if not already_vote:
-        votes = answer.votes
-        is_plus = vote == "inc"
-        if vote == "inc":
-            votes += 1
-        elif vote == "dec":
-            votes -= 1
+        votes = answer.votes + vote
+        is_plus = vote == 1
         Answer.objects.filter(pk=pk_answer).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
         vote = AnswerVote(user=request.user, answer=answer, is_plus=is_plus)
         vote.save()
     else:
-        messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
+        messages.error(request, "Для повторного голосования отмените свой голос.")
     answers = Answer.get_answers(question)
     return render(request, "posts/detail.html", {"question": question, "answers": answers})
 
 
 def change_question_rate(request):
     pk_question = request.POST.get("question_id")
-    vote = request.POST.get("vote")
+    vote = int(request.POST.get("vote"))
 
     question = get_object_or_404(Question, pk=pk_question)
     question.already_vote = QuestionVote.objects.filter(question=question).exists()
     already_vote = QuestionVote.objects.filter(user=request.user).filter(question=question)
     if not already_vote:
-        votes = question.votes
-        is_plus = vote == "inc"
-        if vote == "inc":
-            votes += 1
-        elif vote == "dec":
-            votes -= 1
+        votes = question.votes + vote
+        is_plus = vote == 1
         Question.objects.filter(pk=pk_question).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
         vote = QuestionVote(user=request.user, question=question, is_plus=is_plus)

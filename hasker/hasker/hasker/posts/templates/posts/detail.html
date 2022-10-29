@@ -36,14 +36,14 @@
             <form method="post" action="{% url 'posts:change_question_rate' %}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
-            <input type="hidden" name="vote" value="inc">
+            <input type="hidden" name="vote" value="1">
             <button class="btn-outline-light" type="submit">+</button>
             </form>
 
             <form method="post" action="{% url 'posts:change_question_rate' %}">
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
-            <input type="hidden" name="vote" value="dec">
+            <input type="hidden" name="vote" value="-1">
             <button class="btn-outline-light" type="submit">-</button>
             </form>
         </div>
@@ -83,7 +83,7 @@
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
             <input type="hidden" name="answer_id" value="{{answer.id}}">
-            <input type="hidden" name="vote" value="inc">
+            <input type="hidden" name="vote" value="1">
             <button class="btn btn-primary" type="submit">+</button>
             </form>
 
@@ -91,7 +91,7 @@
             {% csrf_token %}
             <input type="hidden" name="question_id" value="{{question.id}}">
             <input type="hidden" name="answer_id" value="{{answer.id}}">
-            <input type="hidden" name="vote" value="dec">
+            <input type="hidden" name="vote" value="-1">
             <button class="btn btn-primary" type="submit">-</button>
             </form>
         </div>
