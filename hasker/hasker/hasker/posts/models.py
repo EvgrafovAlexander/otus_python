@@ -28,6 +28,7 @@ class Question(models.Model):
 class QuestionVote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="qh_user")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="qh_question")
+    is_plus = models.BooleanField(default=True)
 
 
 class Answer(models.Model):
@@ -52,3 +53,4 @@ class Answer(models.Model):
 class AnswerVote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="aq_user")
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name="aq_answer")
+    is_plus = models.BooleanField(default=True)

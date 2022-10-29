@@ -141,13 +141,14 @@ def change_rate(request, pk_question, pk_answer, vote):
     already_vote = AnswerVote.objects.filter(user=request.user).filter(answer=answer)
     if not already_vote:
         votes = answer.votes
+        is_plus = vote == "inc"
         if vote == "inc":
             votes += 1
         elif vote == "dec":
             votes -= 1
         Answer.objects.filter(pk=pk_answer).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = AnswerVote(user=request.user, answer=answer)
+        vote = AnswerVote(user=request.user, answer=answer, is_plus=is_plus)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
@@ -161,13 +162,14 @@ def change_question_rate(request, pk_question, vote):
     already_vote = QuestionVote.objects.filter(user=request.user).filter(question=question)
     if not already_vote:
         votes = question.votes
+        is_plus = vote == "inc"
         if vote == "inc":
             votes += 1
         elif vote == "dec":
             votes -= 1
         Question.objects.filter(pk=pk_question).update(votes=votes)
         # Добавляем информацию о голосовании пользователя
-        vote = QuestionVote(user=request.user, question=question)
+        vote = QuestionVote(user=request.user, question=question, is_plus=is_plus)
         vote.save()
     else:
         messages.error(request, "Повторное голосование невозможно. Ваш голос был учтён ранее.")
