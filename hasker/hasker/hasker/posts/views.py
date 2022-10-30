@@ -43,6 +43,20 @@ class IndexViewHot(generic.ListView):
         return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-votes")
 
 
+class IndexViewByTag(generic.ListView):
+    template_name = "posts/index.html"
+    context_object_name = "latest_question_list"
+    paginate_by = MAX_QUESTIONS_PER_PAGE
+
+    def get_queryset(self):
+        """
+        Получить набор из вопросов, сортированных по тегу
+        """
+        tag = self.request.GET.get("tag")
+        print("tg", tag)
+        return Question.objects.filter(tags__name__exact=tag).order_by("-votes", "-pub_date")
+
+
 class SearchResultsList(generic.ListView):
     model = Question
     context_object_name = "latest_question_list"

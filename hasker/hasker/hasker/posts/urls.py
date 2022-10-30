@@ -13,7 +13,7 @@ urlpatterns = [
     # ex: /posts/search/
     path("search/", views.SearchResultsList.as_view(), name="search_results"),
     # ex: /posts/search_by_tag/
-    path("search_by_tag/<str:tag>", views.search_by_tag, name="search_by_tag"),
+    path("tag/<str:tag>", views.IndexViewByTag.as_view(), name="search_by_tag"),
     # ex: /posts/5/
     path("<int:pk>/", views.question_view, name="detail"),
     # ex: /posts/register
