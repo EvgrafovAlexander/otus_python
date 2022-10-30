@@ -46,7 +46,13 @@ class IndexViewHot(generic.ListView):
 class SearchResultsList(generic.ListView):
     model = Question
     context_object_name = "latest_question_list"
-    template_name = "posts/index.html"
+    template_name = "posts/search_results.html"
+    paginate_by = MAX_QUESTIONS_PER_PAGE
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("q")
+        return context
 
     def get_queryset(self):
         query = self.request.GET.get("q")
