@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -9,12 +10,15 @@ from django.views import generic
 from .forms import AddAnswerForm, AddQuestionForm, RegisterUserForm
 from .models import Answer, AnswerVote, Question, QuestionVote
 
+MAX_ANSWERS_PER_PAGE = 30
+MAX_QUESTIONS_PER_PAGE = 20
+
 
 # Create your views here.
 class IndexViewLast(generic.ListView):
     template_name = "posts/index.html"
     context_object_name = "latest_question_list"
-    paginate_by = 2
+    paginate_by = MAX_QUESTIONS_PER_PAGE
 
     def get_queryset(self):
         """
@@ -28,7 +32,7 @@ class IndexViewLast(generic.ListView):
 class IndexViewHot(generic.ListView):
     template_name = "posts/index.html"
     context_object_name = "latest_question_list"
-    paginate_by = 2
+    paginate_by = MAX_QUESTIONS_PER_PAGE
 
     def get_queryset(self):
         """
@@ -55,7 +59,8 @@ def question_view(request, pk):
     question = get_object_or_404(Question, pk=pk)
     question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
 def register(request):
@@ -153,7 +158,8 @@ def change_answer_rate(request):
     else:
         messages.error(request, "Для повторного голосования отмените свой голос.")
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
 def change_question_rate(request):
@@ -173,7 +179,8 @@ def change_question_rate(request):
     else:
         messages.error(request, "Для повторного голосования отмените свой голос.")
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
 def choose_the_best(request, pk_question, pk_answer):
@@ -183,7 +190,8 @@ def choose_the_best(request, pk_question, pk_answer):
     question = get_object_or_404(Question, pk=pk_question)
     question.already_vote = QuestionVote.objects.filter(question=question).exists()
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
 def cancel_answer_vote(request):
@@ -199,7 +207,8 @@ def cancel_answer_vote(request):
 
     question = get_object_or_404(Question, pk=pk_question)
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
 def cancel_question_vote(request):
@@ -214,4 +223,11 @@ def cancel_question_vote(request):
 
     question = get_object_or_404(Question, pk=pk_question)
     answers = Answer.get_answers(question)
-    return render(request, "posts/detail.html", {"question": question, "answers": answers})
+    answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
+    return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
+
+
+def _get_page_obj(request, obj, objs_on_page):
+    paginator = Paginator(obj, objs_on_page)
+    page_number = request.GET.get("page")
+    return paginator.get_page(page_number)
