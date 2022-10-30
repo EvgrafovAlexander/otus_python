@@ -19,7 +19,7 @@
                 <h7>Author: {{ question.author }}, Rate: {{ question.votes }}, {{ question.pub_date }}</h7>
 
                 Tag: {% for tag in question.tags.all %}
-                    {{ tag.name }}
+                    <li><a href="{% url 'posts:search_by_tag' tag.name %}"><h5>{{ tag.name }}</h5></a></li>
                 {% endfor %}
 
             </div>

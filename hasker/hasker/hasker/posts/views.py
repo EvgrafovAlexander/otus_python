@@ -237,6 +237,10 @@ def cancel_question_vote(request):
     return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
+def search_by_tag(request, tag):
+    pass
+
+
 def _get_page_obj(request, obj, objs_on_page):
     """
     Формирование списка пагинации
