@@ -64,12 +64,11 @@ def question_view(request, pk):
 
 
 def register(request):
+    """Регистрация нового пользователя"""
     if request.method == "POST":
         form = RegisterUserForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                print("Сохранение пользователя")
-                print(form.cleaned_data)
                 new_user = form.save(commit=False)
                 new_user.email = form.cleaned_data["email"]
                 new_user.avatar = form.cleaned_data["avatar"]
@@ -84,6 +83,7 @@ def register(request):
 
 
 def login_view(request):
+    """Аутентификация пользователя"""
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -103,6 +103,7 @@ def login_view(request):
 
 
 def add_question(request):
+    """Добавление нового вопроса"""
     if request.method == "POST":
         form = AddQuestionForm(request.POST)
         if form.is_valid():
@@ -121,18 +122,17 @@ def add_question(request):
 
 
 def add_answer(request, pk):
+    """Добавление нового ответа на вопрос"""
     if request.method == "POST":
         form = AddAnswerForm(request.POST)
         if form.is_valid():
             try:
-                print("Сохранение ответа")
                 answer = form.save(commit=False)
                 answer.author = request.user
                 answer.question_id = pk
                 answer.save()
                 return redirect("posts:detail", pk=pk)
-            except Exception as e:
-                print(e)
+            except Exception:
                 form.add_error(None, "Не удалось добавить вопрос")
     else:
         form = AddAnswerForm()
@@ -140,6 +140,7 @@ def add_answer(request, pk):
 
 
 def change_answer_rate(request):
+    """Изменение рейтинга ответа"""
     pk_question = request.POST.get("question_id")
     pk_answer = request.POST.get("answer_id")
     vote = int(request.POST.get("vote"))
@@ -163,6 +164,7 @@ def change_answer_rate(request):
 
 
 def change_question_rate(request):
+    """Изменение рейтинга вопроса"""
     pk_question = request.POST.get("question_id")
     vote = int(request.POST.get("vote"))
 
@@ -195,6 +197,7 @@ def choose_the_best(request, pk_question, pk_answer):
 
 
 def cancel_answer_vote(request):
+    """Отменить голос ответа"""
     pk_question = request.POST.get("question_id")
     pk_answer = request.POST.get("answer_id")
 
@@ -212,6 +215,7 @@ def cancel_answer_vote(request):
 
 
 def cancel_question_vote(request):
+    """Отменить голос вопроса"""
     pk_question = request.POST.get("question_id")
 
     votes = QuestionVote.objects.filter(user=request.user).filter(question_id=pk_question)
@@ -228,6 +232,15 @@ def cancel_question_vote(request):
 
 
 def _get_page_obj(request, obj, objs_on_page):
+    """
+    Формирование списка пагинации
+
+    :param request: запрос
+    :param obj: объект для пагинации
+    :param objs_on_page: число объектов на странице
+
+    :return: список страниц с объектами
+    """
     paginator = Paginator(obj, objs_on_page)
     page_number = request.GET.get("page")
     return paginator.get_page(page_number)
