@@ -1,4 +1,5 @@
 import logging
+import re
 from smtplib import SMTPException
 
 from django.conf import settings
@@ -58,7 +59,6 @@ class IndexViewByTag(generic.ListView):
         Получить набор из вопросов, сортированных по тегу
         """
         tag = self.request.GET.get("tag")
-        print("tg", tag)
         return Question.objects.filter(tags__name__exact=tag).order_by("-votes", "-pub_date")
 
 
@@ -75,6 +75,12 @@ class SearchResultsList(generic.ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("q")
+        # Поиск по тегу: tag:<имя тега>
+        found = re.match(r"^tag:(\w+)", query)
+        if found:
+            tag = found.group(1)
+            return Question.objects.filter(tags__name__exact=tag).order_by("-votes", "-pub_date")
+        # Поиск по вопросу
         return Question.objects.filter(
             Q(title__icontains=query) | Q(text__icontains=query) | Q(title__iexact=query) | Q(text__iexact=query)
         ).order_by("-votes", "-pub_date")
@@ -99,8 +105,7 @@ def register(request):
                 new_user.avatar = form.cleaned_data["avatar"]
                 new_user.save()
                 return redirect("posts:login")
-            except Exception as e:
-                print(e)
+            except Exception:
                 form.add_error(None, "Не удалось добавить пользователя")
     else:
         form = RegisterUserForm()
@@ -138,8 +143,7 @@ def add_question(request):
                 question.save()
                 form.save_m2m()
                 return redirect("posts:detail", pk=question.id)
-            except Exception as e:
-                print(e)
+            except Exception:
                 form.add_error(None, "Не удалось добавить вопрос")
     else:
         form = AddQuestionForm()
