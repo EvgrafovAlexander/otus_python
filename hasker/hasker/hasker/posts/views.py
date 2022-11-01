@@ -1,6 +1,11 @@
+import logging
+from smtplib import SMTPException
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -151,9 +156,22 @@ def add_answer(request, pk):
                 answer.author = request.user
                 answer.question_id = pk
                 answer.save()
+                # Отправляем email автору вопроса
+                try:
+                    question = get_object_or_404(Question, pk=pk)
+                    email = question.author.email
+                    send_mail(
+                        "Hasker: new answer",
+                        f"User {request.user.username} sent answer " f"to your question {question.title}.",
+                        settings.EMAIL_HOST_USER,
+                        [email],
+                    )
+                except SMTPException:
+                    logging.error(f"Error sending email to {email}")
+
                 return redirect("posts:detail", pk=pk)
             except Exception:
-                form.add_error(None, "Не удалось добавить вопрос")
+                form.add_error(None, "Не удалось добавить ответ")
     else:
         form = AddAnswerForm()
     return render(request, "posts/add_answer.html", {"form": form, "pk": pk})
