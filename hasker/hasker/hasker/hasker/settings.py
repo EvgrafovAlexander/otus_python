@@ -125,7 +125,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "thumbpath")
 MEDIA_URL = "thumbpath/"
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "posts/static",
 ]
 
 # Default primary key field type
