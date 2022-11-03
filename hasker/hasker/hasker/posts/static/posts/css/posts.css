@@ -1,0 +1,95 @@
+/* Add a black background color to the top navigation */
+.topnav {
+    background-color: #184;
+    overflow: hidden;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {
+    float: left;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+    transition: all .4s ease;
+}
+
+/* Change the color of links on hover */
+.topnav a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+/* Add a color to the active/current link */
+.topnav a.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.topnav img {
+    width: 180px;
+    float: left;
+}
+
+aside {
+    float: right;
+    background: #b1dfbb;
+    width: 21%;
+    height: 100vh;
+    color: #ffa;
+    border-left: 3px solid #95999c;
+}
+
+
+.shadowbox {
+  width: 75vw;
+  border: 1px solid #333;
+  box-shadow: 8px 8px 5px #444;
+  padding: 12px 12px;
+  background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
+}
+
+ul {
+    list-style: none;
+    color: #000000;
+}
+
+h5 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+}
+
+h6 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+    text-align: right;
+}
+
+h4 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+}
+a:after {
+	display: block;
+	position: static;
+	left: 0; /*изменить на right:0;, чтобы изменить направление подчёркивания */
+	width: 0;/*задаём длину линии до наведения курсора*/
+	height: 2px; /*задаём ширину линии*/
+	background-color: #7abaff; /*задаём цвет линии*/
+	content: "";
+	transition: width 0.3s ease-out; /*задаём время анимации*/
+}
+
+a:hover:after,
+a:focus:after {
+	width: 100%; /*устанавливаем значение 100%, чтобы ссылка подчёркивалась полностью*/
+}

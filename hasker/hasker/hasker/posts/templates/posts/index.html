@@ -1,0 +1,48 @@
+{% extends 'posts/layout.html' %}
+
+{% block title %}Hasker{% endblock %}
+
+{% block content %}
+    <h4><div class="btn-group">
+    <a href="{% url 'posts:index' %}"><h4><b>New questions</b> &nbsp</h4></a>
+    <a href="{% url 'posts:index_hot' %}"><h4><b>Hot questions</b></h4></a>
+    </div></h4>
+
+    {% if latest_question_list %}
+        <ul>
+        {% for question in latest_question_list %}
+            <div class="shadowbox">
+                <li><a href="{% url 'posts:detail' question.id %}"><h5>{{ question.title }}</h5> <h6><b>Rate</b>: {{ question.votes }}</h6></a></li>
+                <h7>{{ question.text }}</h7> <h6><b>Author:</b> {{ question.author }}</h6>
+
+                Tags: <h6>{{ question.pub_date }}</h6>{% for tag in question.tags.all %}
+                    <a href="{% url 'posts:search_by_tag' tag.name %}?tag={{ tag.name }}"><h5>{{ tag.name }}</h5></a>
+                {% endfor %}
+
+            </div>
+            <h1></h1>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No question are available.</p>
+    {% endif %}
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
