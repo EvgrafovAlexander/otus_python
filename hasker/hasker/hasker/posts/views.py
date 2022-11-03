@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.views import generic
 
 from .forms import AddAnswerForm, AddQuestionForm, RegisterUserForm
-from .models import Answer, AnswerVote, Question, QuestionVote
+from .models import Answer, AnswerVote, Question, QuestionVote, Tag
 
 MAX_ANSWERS_PER_PAGE = 30
 MAX_QUESTIONS_PER_PAGE = 20
@@ -141,13 +141,26 @@ def add_question(request):
                 question = form.save(commit=False)
                 question.author = request.user
                 question.save()
-                form.save_m2m()
+                tags = parse_tags(request.POST.get("tags"))
+                if len(tags) > 3:
+                    messages.info(request, "Only three tags can be set.")
+                for tag in tags[:3]:
+                    tag = Tag(name=tag)
+                    tag.save()
+                    question.tags.add(tag)
                 return redirect("posts:detail", pk=question.id)
             except Exception:
                 form.add_error(None, "Failed to add question")
     else:
         form = AddQuestionForm()
     return render(request, "posts/add_question.html", {"form": form})
+
+
+def parse_tags(tags: str) -> list:
+    """Преобразование тегов из строки в список"""
+    tags_list = tags.split(",")
+    print(tags_list)
+    return tags_list
 
 
 def add_answer(request, pk):

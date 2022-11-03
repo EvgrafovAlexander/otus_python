@@ -2,16 +2,15 @@ from django import forms
 from django.apps import apps
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import Answer, Question, Tag
+from .models import Answer, Question
 
-# from hasker.users.models import CustomUser
 CustomUser = apps.get_model("users", "CustomUser")
 
 
 class AddQuestionForm(forms.ModelForm):
-    title = forms.CharField(max_length=255, label="Title")
+    title = forms.CharField(max_length=255, label="Title", widget=forms.TextInput)
     text = forms.CharField(widget=forms.Textarea(attrs={"cols": 60, "rows": 10}), label="Question")
-    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), widget=forms.CheckboxSelectMultiple)
+    tags = forms.CharField(max_length=255, label="Tag", widget=forms.TextInput)
 
     class Meta:
         model = Question
