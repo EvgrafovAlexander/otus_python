@@ -43,7 +43,7 @@ aside {
 
 
 .shadowbox {
-  width: 25em;
+  width: 75vw;
   border: 1px solid #333;
   box-shadow: 8px 8px 5px #444;
   padding: 12px 12px;
@@ -59,6 +59,20 @@ h5 {
     list-style: none;
     text-decoration: none;
     color: #000000;
+}
+
+h6 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+    text-align: right;
+}
+
+h4 {
+    list-style: none;
+    text-decoration: none;
+    color: #000000;
+    text-align: center;
 }
 
 a {

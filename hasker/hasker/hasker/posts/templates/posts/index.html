@@ -4,10 +4,10 @@
 
 {% block content %}
     <h2>Questions</h2><br>
-    <div class="btn-group">
-    <li><a href="{% url 'posts:index' %}"><h5>New questions</h5></a></li>
-    <li><a href="{% url 'posts:index_hot' %}"><h5>Hot questions</h5></a></li>
-    </div>
+    <h4><div class="btn-group">
+    <a href="{% url 'posts:index' %}"><h4>New questions &nbsp</h4></a>
+    <a href="{% url 'posts:index_hot' %}"><h4>Hot questions</h4></a>
+    </div></h4>
 
     {% if latest_question_list %}
         <ul>
@@ -16,9 +16,9 @@
                 <li><a href="{% url 'posts:detail' question.id %}"><h5>{{ question.title }}</h5></a></li>
                 <h7>{{ question.text }}</h7>
                 <br><br>
-                <h7>Author: {{ question.author }}, Rate: {{ question.votes }}, {{ question.pub_date }}</h7>
+                <h6>Author: {{ question.author }}, <br> Rate: {{ question.votes }}, <br>{{ question.pub_date }}</h6>
 
-                Tag: {% for tag in question.tags.all %}
+                Tags: {% for tag in question.tags.all %}
                     <li><a href="{% url 'posts:search_by_tag' tag.name %}?tag={{ tag.name }}"><h5>{{ tag.name }}</h5></a></li>
                 {% endfor %}
 

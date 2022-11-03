@@ -20,7 +20,7 @@
       {% if user.is_authenticated %}
           <a href="{% url 'posts:add_question' %}">Ask</a>
           <a href="{% url 'posts:logout' %}">Log out</a>
-          <p>User: {{ user.username }}</p>
+          <h6>User: {{ user.username }}</h6>
 
          {% if user.avatar %}
          <div class="float-end"><img src="{{ user.avatar.url }}" class="img-fluid"></div><br>
