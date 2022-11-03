@@ -3,23 +3,20 @@
 {% block title %}Hasker{% endblock %}
 
 {% block content %}
-    <h2>Questions</h2><br>
     <h4><div class="btn-group">
-    <a href="{% url 'posts:index' %}"><h4>New questions &nbsp</h4></a>
-    <a href="{% url 'posts:index_hot' %}"><h4>Hot questions</h4></a>
+    <a href="{% url 'posts:index' %}"><h4><b>New questions</b> &nbsp</h4></a>
+    <a href="{% url 'posts:index_hot' %}"><h4><b>Hot questions</b></h4></a>
     </div></h4>
 
     {% if latest_question_list %}
         <ul>
         {% for question in latest_question_list %}
             <div class="shadowbox">
-                <li><a href="{% url 'posts:detail' question.id %}"><h5>{{ question.title }}</h5></a></li>
-                <h7>{{ question.text }}</h7>
-                <br><br>
-                <h6>Author: {{ question.author }}, <br> Rate: {{ question.votes }}, <br>{{ question.pub_date }}</h6>
+                <li><a href="{% url 'posts:detail' question.id %}"><h5>{{ question.title }}</h5> <h6><b>Rate</b>: {{ question.votes }}</h6></a></li>
+                <h7>{{ question.text }}</h7> <h6><b>Author:</b> {{ question.author }}</h6>
 
-                Tags: {% for tag in question.tags.all %}
-                    <li><a href="{% url 'posts:search_by_tag' tag.name %}?tag={{ tag.name }}"><h5>{{ tag.name }}</h5></a></li>
+                Tags: <h6>{{ question.pub_date }}</h6>{% for tag in question.tags.all %}
+                    <a href="{% url 'posts:search_by_tag' tag.name %}?tag={{ tag.name }}"><h5>{{ tag.name }}</h5></a>
                 {% endfor %}
 
             </div>
