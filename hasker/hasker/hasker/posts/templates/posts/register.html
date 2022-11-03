@@ -1,6 +1,6 @@
 {% extends 'posts/layout.html' %}
 
-{% block title %}Регистрация на сайте{% endblock %}
+{% block title %}Registration on the website{% endblock %}
 
 {% block content %}
     <h2>Регистрация</h2><br>
@@ -8,7 +8,7 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Регистрация</button>
+        <button type="submit">Register</button>
 
     </form>
 {% endblock %}

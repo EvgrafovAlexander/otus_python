@@ -106,7 +106,7 @@ def register(request):
                 new_user.save()
                 return redirect("posts:login")
             except Exception:
-                form.add_error(None, "Не удалось добавить пользователя")
+                form.add_error(None, "Failed to add user")
     else:
         form = RegisterUserForm()
     return render(request, "posts/register.html", {"form": form})
@@ -144,7 +144,7 @@ def add_question(request):
                 form.save_m2m()
                 return redirect("posts:detail", pk=question.id)
             except Exception:
-                form.add_error(None, "Не удалось добавить вопрос")
+                form.add_error(None, "Failed to add question")
     else:
         form = AddQuestionForm()
     return render(request, "posts/add_question.html", {"form": form})
@@ -175,7 +175,7 @@ def add_answer(request, pk):
 
                 return redirect("posts:detail", pk=pk)
             except Exception:
-                form.add_error(None, "Не удалось добавить ответ")
+                form.add_error(None, "Failed to add response")
     else:
         form = AddAnswerForm()
     return render(request, "posts/add_answer.html", {"form": form, "pk": pk})
@@ -199,7 +199,7 @@ def change_answer_rate(request):
         vote = AnswerVote(user=request.user, answer=answer, is_plus=is_plus)
         vote.save()
     else:
-        messages.error(request, "Для повторного голосования отмените свой голос.")
+        messages.error(request, "To re-vote, cancel your vote.")
     answers = Answer.get_answers(question)
     answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
     return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
@@ -221,7 +221,7 @@ def change_question_rate(request):
         vote = QuestionVote(user=request.user, question=question, is_plus=is_plus)
         vote.save()
     else:
-        messages.error(request, "Для повторного голосования отмените свой голос.")
+        messages.error(request, "To re-vote, cancel your vote.")
     answers = Answer.get_answers(question)
     answers = _get_page_obj(request, answers, MAX_ANSWERS_PER_PAGE)
     return render(request, "posts/detail.html", {"question": question, "page_obj": answers})

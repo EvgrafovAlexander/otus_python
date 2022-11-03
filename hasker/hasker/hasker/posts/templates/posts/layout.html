@@ -2,7 +2,7 @@
 {% load posts_tags %}
 
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
@@ -15,11 +15,11 @@
 <body>
      <div class="topnav">
          <img src="{% static 'posts/img/hasker_image.png' %}" alt="Logo">
-      <a class="active" href="{% url 'posts:index' %}">Главная</a>
+      <a class="active" href="{% url 'posts:index' %}">Main</a>
 
       {% if user.is_authenticated %}
-          <a href="{% url 'posts:add_question' %}">Задать вопрос</a>
-          <a href="{% url 'posts:logout' %}">Выйти</a>
+          <a href="{% url 'posts:add_question' %}">Ask</a>
+          <a href="{% url 'posts:logout' %}">Log out</a>
           <p>User: {{ user.username }}</p>
 
          {% if user.avatar %}
@@ -28,7 +28,7 @@
          {% endif %}
 
       {% else %}
-          <a href="{% url 'posts:register' %}">Регистрация</a> | <a href="{% url 'posts:login' %}">Войти</a>
+          <a href="{% url 'posts:register' %}">Register</a> | <a href="{% url 'posts:login' %}">Log in</a>
       {% endif %}
 
     <form action="{% url 'posts:search_results' %}" method="get">

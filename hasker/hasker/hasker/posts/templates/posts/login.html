@@ -1,9 +1,9 @@
 {% extends 'posts/layout.html' %}
 
-{% block title %}Вход на сайт{% endblock %}
+{% block title %}Sign in{% endblock %}
 
 {% block content %}
-    <h2>Аутентификация</h2><br>
+    <h2>Authentication</h2><br>
 
     <div class="container py-5">
       <h1>Login</h1>
@@ -12,6 +12,6 @@
         {{ login_form }}
         <button class="btn btn-primary" type="submit">Login</button>
       </form>
-      <p class="text-center">Don't have an account? <a href="/register">Create an account</a>.</p>
+      <p class="text-center">Don't have an account? <a href="{% url 'posts:register' %}">Create an account</a>.</p>
     </div>
 {% endblock %}
