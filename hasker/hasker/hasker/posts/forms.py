@@ -9,8 +9,8 @@ CustomUser = apps.get_model("users", "CustomUser")
 
 
 class AddQuestionForm(forms.ModelForm):
-    title = forms.CharField(max_length=255, label="Заголовок вопроса")
-    text = forms.CharField(widget=forms.Textarea(attrs={"cols": 60, "rows": 10}), label="Текст вопроса")
+    title = forms.CharField(max_length=255, label="Title")
+    text = forms.CharField(widget=forms.Textarea(attrs={"cols": 60, "rows": 10}), label="Question")
     tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), widget=forms.CheckboxSelectMultiple)
 
     class Meta:
@@ -19,7 +19,7 @@ class AddQuestionForm(forms.ModelForm):
 
 
 class AddAnswerForm(forms.ModelForm):
-    text = forms.CharField(widget=forms.Textarea(attrs={"cols": 60, "rows": 10}), label="Текст ответа")
+    text = forms.CharField(widget=forms.Textarea(attrs={"cols": 60, "rows": 10}), label="Answer")
 
     class Meta:
         model = Answer
@@ -27,7 +27,7 @@ class AddAnswerForm(forms.ModelForm):
 
 
 class RegisterUserForm(UserCreationForm):
-    username = forms.CharField(max_length=255, label="Никнейм")
+    username = forms.CharField(max_length=255, label="Nickname")
     password1 = forms.PasswordInput()
     password2 = forms.PasswordInput()
     email = forms.EmailField()
