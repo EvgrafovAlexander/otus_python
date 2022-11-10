@@ -10,7 +10,12 @@ from request import Request
 
 class Server:
     def __init__(
-        self, address: str = "0.0.0.0", port: int = 9000, max_connections: int = 1000, document_root: str = ""
+        self,
+        address: str = "0.0.0.0",
+        port: int = 9000,
+        max_connections: int = 1000,
+        document_root: str = "",
+        workers: int = 1,
     ):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -18,6 +23,7 @@ class Server:
         self.port = port
         self.max_connections = max_connections
         self.document_root = document_root
+        self.workers = workers
 
     def bind(self):
         self.server_sock.bind((self.address, self.port))
@@ -69,6 +75,7 @@ def get_args():
     parser.add_argument("-addr", "--address", type=str, help="server address: 0.0.0.0")
     parser.add_argument("-port", "--port", type=int, help="server port: 9000")
     parser.add_argument("-r", "--document_root", type=str, help="document root path: /OTUServer")
+    parser.add_argument("-w", "--workers", type=int, help="workers: 4")
     args = parser.parse_args()
     return args
 
@@ -78,6 +85,7 @@ if __name__ == "__main__":
     document_root = args.document_root
     addr = args.address
     port = args.port
+    workers = args.workers
 
     logging.basicConfig(
         format="[%(asctime)s] %(levelname).1s:%(message)s",
