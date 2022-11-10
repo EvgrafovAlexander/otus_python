@@ -1,20 +1,32 @@
 # stdlib
 import argparse
 import logging
+import os
 import socket
 import threading
+from multiprocessing import Process
+from typing import Callable
 
 # project
 from request import Request
 
 
 class Server:
-    def __init__(self, address: str, port: int, max_connections: int = 1000):
+    def __init__(
+        self,
+        address: str = "0.0.0.0",
+        port: int = 9000,
+        max_connections: int = 1000,
+        document_root: str = "",
+        workers: int = 1,
+    ):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
         self.port = port
         self.max_connections = max_connections
+        self.document_root = document_root
+        self.workers = workers
 
     def bind(self):
         self.server_sock.bind((self.address, self.port))
@@ -40,7 +52,7 @@ class Server:
         data = self.receive_data(client_socket)
         if data:
             logging.info("Received message: %s", data)
-            response = Request(data, DOCUMENT_ROOT).get_response()
+            response = Request(data, self.document_root).get_response()
             client_socket.sendall(response)
             client_socket.close()
 
@@ -63,16 +75,48 @@ class Server:
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-addr", "--address", type=str, help="server address: 0.0.0.0")
+    parser.add_argument("-port", "--port", type=int, help="server port: 9000")
     parser.add_argument("-r", "--document_root", type=str, help="document root path: /OTUServer")
+    parser.add_argument("-w", "--workers", type=int, help="workers: 4")
     args = parser.parse_args()
     return args
 
 
+def run_server(addr: str, port: int, document_root: str, shift: int):
+    """Функция для запуска сервера в multiprocessing"""
+    logging.info(f"Worker {shift} run at process id: {os.getpid()}")
+    server = Server(addr, port + shift, document_root=document_root)
+    server.bind()
+    server.run()
+
+
+def run_workers(func: Callable, workers: int, addr: str, port: int, document_root: str):
+    """Функция запуска процессов по заданному числу workers"""
+    procs = []
+    for i in range(workers):
+        p = Process(
+            target=func,
+            args=(
+                addr,
+                port,
+                document_root,
+                i,
+            ),
+        )
+        procs.append(p)
+        p.start()
+
+    for p in procs:
+        p.join()
+
+
 if __name__ == "__main__":
-    ADDR = "0.0.0.0"
-    PORT = 9000
     args = get_args()
-    DOCUMENT_ROOT = args.document_root
+    document_root = args.document_root
+    addr = args.address
+    port = args.port
+    workers = args.workers
 
     logging.basicConfig(
         format="[%(asctime)s] %(levelname).1s:%(message)s",
@@ -81,6 +125,4 @@ if __name__ == "__main__":
         filename=None,
     )
 
-    server = Server(ADDR, PORT)
-    server.bind()
-    server.run()
+    run_workers(run_server, workers, addr, port, document_root)
