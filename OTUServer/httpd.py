@@ -9,7 +9,9 @@ from request import Request
 
 
 class Server:
-    def __init__(self, address: str, port: int, max_connections: int = 1000, document_root: str = ""):
+    def __init__(
+        self, address: str = "0.0.0.0", port: int = 9000, max_connections: int = 1000, document_root: str = ""
+    ):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
@@ -64,16 +66,18 @@ class Server:
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-addr", "--address", type=str, help="server address: 0.0.0.0")
+    parser.add_argument("-port", "--port", type=int, help="server port: 9000")
     parser.add_argument("-r", "--document_root", type=str, help="document root path: /OTUServer")
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
-    ADDR = "0.0.0.0"
-    PORT = 9000
     args = get_args()
-    DOCUMENT_ROOT = args.document_root
+    document_root = args.document_root
+    addr = args.address
+    port = args.port
 
     logging.basicConfig(
         format="[%(asctime)s] %(levelname).1s:%(message)s",
@@ -82,6 +86,6 @@ if __name__ == "__main__":
         filename=None,
     )
 
-    server = Server(ADDR, PORT, document_root=DOCUMENT_ROOT)
+    server = Server(addr, port, document_root=document_root)
     server.bind()
     server.run()
