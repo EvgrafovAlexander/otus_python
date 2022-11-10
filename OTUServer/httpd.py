@@ -1,8 +1,11 @@
 # stdlib
 import argparse
 import logging
+import os
 import socket
 import threading
+from multiprocessing import Process
+from typing import Callable
 
 # project
 from request import Request
@@ -80,6 +83,34 @@ def get_args():
     return args
 
 
+def run_server(addr: str, port: int, document_root: str, shift: int):
+    """Функция для запуска сервера в multiprocessing"""
+    logging.info(f"Worker {shift} run at process id: {os.getpid()}")
+    server = Server(addr, port + shift, document_root=document_root)
+    server.bind()
+    server.run()
+
+
+def run_workers(func: Callable, workers: int, addr: str, port: int, document_root: str):
+    """Функция запуска процессов по заданному числу workers"""
+    procs = []
+    for i in range(workers):
+        p = Process(
+            target=func,
+            args=(
+                addr,
+                port,
+                document_root,
+                i,
+            ),
+        )
+        procs.append(p)
+        p.start()
+
+    for p in procs:
+        p.join()
+
+
 if __name__ == "__main__":
     args = get_args()
     document_root = args.document_root
@@ -94,6 +125,4 @@ if __name__ == "__main__":
         filename=None,
     )
 
-    server = Server(addr, port, document_root=document_root)
-    server.bind()
-    server.run()
+    run_workers(run_server, workers, addr, port, document_root)
