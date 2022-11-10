@@ -9,12 +9,13 @@ from request import Request
 
 
 class Server:
-    def __init__(self, address: str, port: int, max_connections: int = 1000):
+    def __init__(self, address: str, port: int, max_connections: int = 1000, document_root: str = ""):
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.address = address
         self.port = port
         self.max_connections = max_connections
+        self.document_root = document_root
 
     def bind(self):
         self.server_sock.bind((self.address, self.port))
@@ -40,7 +41,7 @@ class Server:
         data = self.receive_data(client_socket)
         if data:
             logging.info("Received message: %s", data)
-            response = Request(data, DOCUMENT_ROOT).get_response()
+            response = Request(data, self.document_root).get_response()
             client_socket.sendall(response)
             client_socket.close()
 
@@ -81,6 +82,6 @@ if __name__ == "__main__":
         filename=None,
     )
 
-    server = Server(ADDR, PORT)
+    server = Server(ADDR, PORT, document_root=DOCUMENT_ROOT)
     server.bind()
     server.run()
