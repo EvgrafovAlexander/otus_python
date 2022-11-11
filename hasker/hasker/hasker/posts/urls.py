@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.contrib.auth.views import LogoutView
 from django.urls import path
 
 from . import views
@@ -16,12 +14,6 @@ urlpatterns = [
     path("tag/<str:tag>", views.IndexViewByTag.as_view(), name="search_by_tag"),
     # ex: /posts/5/
     path("<int:pk>/", views.question_view, name="detail"),
-    # ex: /posts/register
-    path("register/", views.register, name="register"),
-    # ex: /posts/login
-    path("login/", views.login_view, name="login"),
-    # ex: /posts/logout
-    path("logout/", LogoutView.as_view(), {"next_page": settings.LOGOUT_REDIRECT_URL}, name="logout"),
     # ex: /posts/add_question
     path("add_question/", views.add_question, name="add_question"),
     # ex: /posts/5/add_answer

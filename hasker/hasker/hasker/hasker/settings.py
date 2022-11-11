@@ -132,7 +132,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-LOGOUT_REDIRECT_URL = "/posts/login"
+LOGOUT_REDIRECT_URL = "/users/login"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 EMAIL_HOST_USER = "hasker@hasker.com"

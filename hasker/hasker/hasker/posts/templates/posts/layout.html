@@ -19,7 +19,7 @@
 
       {% if user.is_authenticated %}
           <a href="{% url 'posts:add_question' %}">Ask</a>
-          <a href="{% url 'posts:logout' %}">Log out</a>
+          <a href="{% url 'users:logout' %}">Log out</a>
           <h6>User: {{ user.username }}</h6>
 
          {% if user.avatar %}
@@ -28,7 +28,7 @@
          {% endif %}
 
       {% else %}
-          <a href="{% url 'posts:register' %}">Register</a> | <a href="{% url 'posts:login' %}">Log in</a>
+          <a href="{% url 'users:register' %}">Register</a> | <a href="{% url 'users:login' %}">Log in</a>
       {% endif %}
 
     <form action="{% url 'posts:search_results' %}" method="get">
