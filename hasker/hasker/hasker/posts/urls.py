@@ -15,7 +15,7 @@ urlpatterns = [
     # ex: /posts/5/
     path("<int:pk>/", views.question_view, name="detail"),
     # ex: /posts/add_question
-    path("add_question/", views.add_question, name="add_question"),
+    path("add_question/", views.AddQuestion.as_view(), name="add_question"),
     # ex: /posts/5/add_answer
     path("<int:pk>/add_answer/", views.add_answer, name="add_answer"),
     # ex: posts/change_answer_rate/

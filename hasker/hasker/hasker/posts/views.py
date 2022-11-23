@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import generic
+from django.views.generic.edit import CreateView
 
 from .forms import AddAnswerForm, AddQuestionForm
 from .models import Answer, AnswerVote, Question, QuestionVote, Tag
@@ -92,28 +93,24 @@ def question_view(request, pk):
     return render(request, "posts/detail.html", {"question": question, "page_obj": answers})
 
 
-def add_question(request):
+class AddQuestion(CreateView):
     """Добавление нового вопроса"""
-    if request.method == "POST":
-        form = AddQuestionForm(request.POST)
-        if form.is_valid():
-            try:
-                question = form.save(commit=False)
-                question.author = request.user
-                question.save()
-                tags = parse_tags(request.POST.get("tags"))
-                if len(tags) > 3:
-                    messages.info(request, "Only three tags can be set.")
-                for tag in tags[:3]:
-                    tag = Tag(name=tag)
-                    tag.save()
-                    question.tags.add(tag)
-                return redirect("posts:detail", pk=question.id)
-            except Exception:
-                form.add_error(None, "Failed to add question")
-    else:
-        form = AddQuestionForm()
-    return render(request, "posts/add_question.html", {"form": form})
+
+    form_class = AddQuestionForm
+    template_name = "posts/add_question.html"
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.author = self.request.user
+        obj.save()
+        tags = parse_tags(self.request.POST.get("tags"))
+        if len(tags) > 3:
+            messages.info(self.request, "Only three tags can be set.")
+        for tag in tags[:3]:
+            tag = Tag(name=tag)
+            tag.save()
+            obj.tags.add(tag)
+        return redirect("posts:detail", pk=obj.id)
 
 
 def parse_tags(tags: str) -> list:
