@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import collections
+import datetime
 import glob
 import gzip
 import logging
@@ -152,8 +153,13 @@ if __name__ == "__main__":
     gen = glob.iglob(opts.pattern)
 
     logging.info("Memc loader started with options: %s" % opts)
+
+    start = datetime.datetime.now()
     try:
         main(opts)
     except Exception as e:
         logging.exception("Unexpected error: %s" % e)
         sys.exit(1)
+    finally:
+        stop = datetime.datetime.now()
+        logging.info("Seconds: %s" % (stop - start).seconds)
