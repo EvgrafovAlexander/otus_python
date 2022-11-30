@@ -79,7 +79,9 @@ def main(options):
         logging.info("Processing %s" % fn)
         fd = gzip.open(fn)
         for line in fd:
-            line = line.strip()
+            print(line)
+
+            line = line.decode().strip()
             if not line:
                 continue
             appsinstalled = parse_appsinstalled(line)
@@ -89,7 +91,7 @@ def main(options):
             memc_addr = device_memc.get(appsinstalled.dev_type)
             if not memc_addr:
                 errors += 1
-                logging.error("Unknow device type: %s" % appsinstalled.dev_type)
+                logging.error("Unknown device type: %s" % appsinstalled.dev_type)
                 continue
             ok = insert_appsinstalled(memc_addr, appsinstalled, options.dry)
             if ok:
@@ -103,7 +105,7 @@ def main(options):
 
         err_rate = float(errors) / processed
         if err_rate < NORMAL_ERR_RATE:
-            logging.info("Acceptable error rate (%s). Successfull load" % err_rate)
+            logging.info("Acceptable error rate (%s). Successful load" % err_rate)
         else:
             logging.error("High error rate (%s > %s). Failed load" % (err_rate, NORMAL_ERR_RATE))
         fd.close()
@@ -148,7 +150,6 @@ if __name__ == "__main__":
         sys.exit(0)
 
     gen = glob.iglob(opts.pattern)
-    lst = list(gen)
 
     logging.info("Memc loader started with options: %s" % opts)
     try:
